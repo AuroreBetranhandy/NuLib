@@ -12,7 +12,7 @@ SOURCES = fermi.F90 \
 	  emissivities.F90 \
 	  scattering.F90 \
 	  weak_magnetism_correction.F90 \
-	  inelastic_electron_scattering.F90 \
+	  inelastic_lepton_scattering.F90 \
 	  eos_interface.F90\
 	  bremsstrahlung.F90
 
@@ -93,9 +93,9 @@ EXTRAINCS += $(HDF5INCS)
 EXTRAOBJECTS += $(HDF5LIBS)
 
 ifeq ($(WEAK_RATES),1)
-all: nulib.a ../nulibtable_driver ../point_example ../bremsstrahlung_point_example ../make_table_weakrates
+all: nulib.a ../nulibtable_driver ../point_example ../bremsstrahlung_point_example ../make_table_weakrates ../muons_point_example
 else
-all: nulib.a ../nulibtable_driver ../point_example ../bremsstrahlung_point_example ../make_table_example
+all: nulib.a ../nulibtable_driver ../point_example ../bremsstrahlung_point_example ../make_table_example ../muons_point_example
 endif
 
 ../nulibtable_driver:  $(EXTRADEPS) $(NT_OBJECTS) $(F_OBJECTS) $(f90_OBJECTS)
@@ -106,6 +106,9 @@ endif
 
 ../bremsstrahlung_point_example:  $(EXTRADEPS) $(F_OBJECTS) $(MOD_OBJECTS) $(OBJECTS)  $(f90_OBJECTS)bremsstrahlung_point_example.F90
 	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) $(EXTRAINCS) -o $@ bremsstrahlung_point_example.F90 $(MOD_OBJECTS) $(OBJECTS) $(F_OBJECTS) $(EXTRAOBJECTS) $(f90_OBJECTS)
+	
+../muons_point_example:  $(EXTRADEPS) $(F_OBJECTS) $(MOD_OBJECTS) $(OBJECTS)  $(f90_OBJECTS)muons_point_example.F90
+	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) $(EXTRAINCS) -o $@ muons_point_example.F90 $(MOD_OBJECTS) $(OBJECTS) $(F_OBJECTS) $(EXTRAOBJECTS) $(f90_OBJECTS)
 
 ../make_table_example:  $(EXTRADEPS) $(F_OBJECTS) $(MOD_OBJECTS) $(OBJECTS)  $(f90_OBJECTS)make_table_example.F90
 	$(F90) $(F90FLAGS) $(DEFS) $(MODINC) $(EXTRAINCS) -o $@ make_table_example.F90 $(MOD_OBJECTS) $(OBJECTS) $(F_OBJECTS) $(EXTRAOBJECTS) $(f90_OBJECTS)

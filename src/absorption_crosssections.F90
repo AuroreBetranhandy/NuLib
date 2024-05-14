@@ -75,7 +75,7 @@ function nue_absorption_on_n(neutrino_energy,eos_variables) result(crosssection)
   logterm = min(200.0d0,max(-200.0d0,feminus_over_SA_exp_log10ed - one_plus_feminus_exp_log10ed + one_plus_SA_exp_log10ed))
   expterm = 10.0d0**(logterm)
 
-  crosssection = sigma0 * & !cm^2
+  crosssection = sigma0 * cabbibo_angle *& !cm^2
           (1.0d0+3.0d0*gA**2) / 4.0d0 * & !dimensionless
           (final_electron_energy/m_e)**2 * & !dimensionless
           (1.0d0-(m_e/final_electron_energy)**2)**0.5d0 * & !dimensionless
@@ -164,13 +164,193 @@ function anue_absorption_on_p(neutrino_energy,eos_variables) result(crosssection
 
   expterm = 10.0d0**(logterm)
 
-  crosssection = sigma0 * & !cm^2
+  crosssection = sigma0 * cabbibo_angle * & !cm^2
        (1.0d0+3.0d0*gA**2) / 4.0d0 * & !dimensionless
        (final_positron_energy/m_e)**2 * & !dimensionless
        (1.0d0-(m_e/final_positron_energy)**2)**0.5d0 * & !dimensionless
        expterm*weak_mag !dimensionless
 
 end function anue_absorption_on_p
+
+function numu_absorption_on_n(neutrino_energy,eos_variables) result(crosssection)
+  
+  use nulib
+  implicit none
+
+  real*8, intent(in) :: eos_variables(total_eos_variables)  
+  real*8, intent(in) :: neutrino_energy !MeV
+  real*8 :: crosssection !final answer in cm^2
+
+  !local variables
+  real*8 :: final_muon_energy !MeV
+  real*8 :: feminus_exp_log10ed,SA_exp_log10ed,feminus_over_SA_exp_log10ed !dimensionless
+  real*8 :: one_plus_feminus_exp_log10ed,one_plus_SA_exp_log10ed !dimensionless
+  real*8 :: weak_mag !dimensionless
+  real*8 :: mu_nu_eq !MeV
+  real*8 :: logterm,expterm !dimensionless
+
+  !function declarations
+  real*8 :: weak_mag_correction_absorption
+  real*8 :: fermidirac_exptermonly_log10ed
+
+  !based on Todd Thompson PhD Appendix B, Eq. B8, final state proton
+  !blocking is done outside of this subroutine (bottom of
+  !absorption_crosssections.F90)
+
+  final_muon_energy = neutrino_energy + delta_np
+  if (final_muon_energy .lt. m_mu) then 
+	crosssection=0.0d0
+	return
+  endif
+  
+  mu_nu_eq = eos_variables(mumuindex)-eos_variables(muhatindex)
+  feminus_exp_log10ed = fermidirac_exptermonly_log10ed(final_muon_energy, &
+       eos_variables(mumuindex),eos_variables(tempindex)) !final state muon blocking
+  SA_exp_log10ed = fermidirac_exptermonly_log10ed(neutrino_energy,mu_nu_eq,eos_variables(tempindex))
+  if (do_weak_mag_corrections) then
+     weak_mag = weak_mag_correction_absorption(neutrino_energy,0) !to first order 1.0d0+1.01d0*neutrino_energy/m_ref, Horowitz 2002
+  else
+     weak_mag = 1.0d0
+  endif
+
+  !Note on the exp's.  The Fermi functions and simulated absorption
+  !terms can be huge/small.  The best way to deal with this is to
+  !play tricks.  We write them all in terms of the log of the exp, not
+  !the fermi functions, and then combine appropiately (taking into
+  !account the size of the exp to deal with the +1's appropiately
+
+  !Note, we can also combine the feminus_exp/SA_exp term
+  !the arguement of feminus_exp is neutrino_energy + delta_np - matter_mue
+  !the arguement of SA_exp is neutrino_energy - matter_nue + matter_muhat
+  !feplus_exp/SA_exp = exponential with arguement of
+  !delta_np-matter_muhat
+  feminus_over_SA_exp_log10ed = (delta_np-eos_variables(muhatindex))/eos_variables(tempindex)*log10exp
+
+  !The full term we are lumping together is:
+  !(1-f_{e-})/(1-f_{\nu_e}^{eq}) =
+  !fexp_{e-}*(1+fexp_{SA})/(1+fexp_{e-})/fexp_{SA} =
+  !10.0d0**(feminus_over_SA_exp_log10ed - one_plus_feminus_exp_log10ed
+  !+ one_plus_SA_exp_log10ed)
+
+  !deal with fermi functions +1's
+  if (feminus_exp_log10ed.gt.30.0d0) then !exp >> 1
+     one_plus_feminus_exp_log10ed = feminus_exp_log10ed 
+  else if (feminus_exp_log10ed.lt.-30.0d0) then !exp << 1
+     one_plus_feminus_exp_log10ed = 0.0d0
+  else 
+     one_plus_feminus_exp_log10ed = log10(1.0d0+10.0d0**(feminus_exp_log10ed))
+  endif
+
+  if (SA_exp_log10ed.gt.30.0d0) then  !exp >> 1
+     one_plus_SA_exp_log10ed = SA_exp_log10ed
+  else if (SA_exp_log10ed.lt.-30.0d0) then !exp << 1
+     one_plus_SA_exp_log10ed = 0.0d0
+  else
+     one_plus_SA_exp_log10ed = log10(1.0d0+10.0d0**(SA_exp_log10ed))
+  endif
+
+  logterm = min(200.0d0,max(-200.0d0,feminus_over_SA_exp_log10ed - one_plus_feminus_exp_log10ed + one_plus_SA_exp_log10ed))
+  expterm = 10.0d0**(logterm)
+
+  crosssection = sigma0 * cabbibo_angle * & !cm^2
+          (1.0d0+3.0d0*gA**2) / 4.0d0 * & !dimensionless
+          (final_muon_energy/m_mu)**2 * & !dimensionless
+          (1.0d0-(m_mu/final_muon_energy)**2)**0.5d0 * & !dimensionless
+          expterm*weak_mag !dimensionless
+   
+!~    write(*,*)  m_mu/final_muon_energy,m_mu,expterm,weak_mag,crosssection,cabbibo_angle,gA,sigma0
+!~    stop
+
+end function numu_absorption_on_n
+
+function anumu_absorption_on_p(neutrino_energy,eos_variables) result(crosssection)
+  
+  use nulib
+  implicit none
+
+  real*8, intent(in) :: eos_variables(total_eos_variables)  
+  real*8, intent(in) :: neutrino_energy !MeV
+  real*8  :: crosssection !final answer in cm^2
+
+  !local variables
+  real*8 :: final_muonplus_energy !MeV
+  real*8 :: feplus_exp_log10ed,SA_exp_log10ed,feplus_over_SA_exp_log10ed !dimensionless
+  real*8 :: one_plus_SA_exp_log10ed,one_plus_feplus_exp_log10ed !dimensionless
+  real*8 :: weak_mag !dimensionless
+  real*8 :: mu_nu_eq !MeV
+  real*8 :: expterm, logterm !dimensionless
+
+  !function declarations
+  real*8 :: fermidirac_exptermonly_log10ed
+  real*8 :: weak_mag_correction_absorption
+
+  !based on Todd Thompson PhD Appendix B, Eq. B11, final state neutron
+  !blocking is done outside of this subroutine (bottom of
+  !absorption_crosssections.F90)
+  final_muonplus_energy = neutrino_energy - delta_np
+  
+  if (final_muonplus_energy .lt. m_mu) then 
+	crosssection=0.0d0
+	return
+  endif
+  
+  mu_nu_eq = -(eos_variables(mumuindex)-eos_variables(muhatindex))
+  feplus_exp_log10ed = fermidirac_exptermonly_log10ed(final_muonplus_energy,-eos_variables(mumuindex),eos_variables(tempindex))
+  SA_exp_log10ed = fermidirac_exptermonly_log10ed(neutrino_energy,mu_nu_eq,eos_variables(tempindex))
+  if (do_weak_mag_corrections) then
+     weak_mag = weak_mag_correction_absorption(neutrino_energy,1) !to first order 1.0d0-7.1d0*neutrino_energy/m_p, Horowitz 2002
+  else
+     weak_mag = 1.0d0
+  endif
+
+  !Note on the exp's.  The Fermi functions and simulated absorbtion
+  !terms can be huges/small.  The best way to deal with this is to
+  !play tricks.  We write them all in terms of the log of the exp, not
+  !the fermi functions, and then combine appropiately (taking into
+  !account the size of the exp to deal with the +1 appropiately
+
+  !Note, we can also combine the feplus_exp/SA_exp term
+  !the arguement of feplus_exp is neutrino_energy - delta_np + matter_mue
+  !the arguement of SA_exp is neutrino_energy + matter_nue - matter_muhat
+  !feplus_exp/SA_exp = exponential with arguement of
+  !-delta_np+matter_muhat
+  feplus_over_SA_exp_log10ed = (-delta_np+eos_variables(muhatindex))/eos_variables(tempindex)*log10exp
+
+  !The full term we are lumping together is:
+  !(1-f_{e+})/(1-f_{\bar{nu}_e}^{eq}) =
+  !fexp_{e+}*(1+fexp_{SA})/(1+fexp_{e+})/fexp_{SA} =
+  !10.0d0**(feplus_over_SA_exp_log10ed - one_plus_feplus_exp_log10ed
+  !+ one_plus_SA_exp_log10ed)
+
+  !deal with fermi functions +1's
+  if (feplus_exp_log10ed.gt.30.0d0) then !exp >> 1
+     one_plus_feplus_exp_log10ed = feplus_exp_log10ed 
+  else if (feplus_exp_log10ed.lt.-30.0d0) then !exp << 1
+     one_plus_feplus_exp_log10ed = 0.0d0
+  else 
+     one_plus_feplus_exp_log10ed = log10(1.0d0+10.0d0**(feplus_exp_log10ed))
+  endif
+
+  if (SA_exp_log10ed.gt.30.0d0) then  !exp >> 1
+     one_plus_SA_exp_log10ed = SA_exp_log10ed
+  else if (SA_exp_log10ed.lt.-30.0d0) then !exp << 1
+     one_plus_SA_exp_log10ed = 0.0d0
+  else
+     one_plus_SA_exp_log10ed = log10(1.0d0+10.0d0**(SA_exp_log10ed))
+  endif
+
+  !add all log terms up together, and also apply limits for extreme cases!!!
+  logterm = min(200.0d0,max(-200.0d0,feplus_over_SA_exp_log10ed - one_plus_feplus_exp_log10ed + one_plus_SA_exp_log10ed))
+
+  expterm = 10.0d0**(logterm)
+
+  crosssection = sigma0 * cabbibo_angle * & !cm^2 
+       (1.0d0+3.0d0*gA**2) / 4.0d0 * & !dimensionless
+       (final_muonplus_energy/m_mu)**2 * & !dimensionless
+       (1.0d0-(m_mu/final_muonplus_energy)**2)**0.5d0 * & !dimensionless
+       expterm*weak_mag !dimensionless
+
+end function anumu_absorption_on_p
 
 function nux_absorption_on_n_and_p(neutrino_energy,eos_variables) result(crosssection)
 
@@ -203,7 +383,7 @@ function nux_absorption_on_n_and_p(neutrino_energy,eos_variables) result(crossse
      rhofactor = 0.0d0
   endif
   
-  crosssection = sigma0 * & !cm^2
+  crosssection = sigma0 * cabbibo_angle * & !cm^2
        (1.0d0+3.0d0*gA**2) / 4.0d0 * & !dimensionless
        (neutrino_energy/m_e)**2 !dimensionless
 
@@ -339,6 +519,8 @@ subroutine total_absorption_opacities(neutrino_species,neutrino_energy,absorptio
   real*8 :: fermidirac_exptermonly !function declaration
   real*8 :: nue_absorption_on_n !function declaration
   real*8 :: anue_absorption_on_p !function declaration
+  real*8 :: numu_absorption_on_n !function declaration
+  real*8 :: anumu_absorption_on_p !function declaration
   real*8 :: nue_absorption_on_A !function declaration
   real*8 :: nux_absorption_on_n_and_p !function declaration
 
@@ -415,6 +597,54 @@ subroutine total_absorption_opacities(neutrino_species,neutrino_energy,absorptio
           heavy_number_density ! # heavies/cm^3
   endif
 
+  !add in the muon neutrino absorption on free neutrons
+  if (add_numu_absorption_on_n.and.neutrino_species.eq.4) then
+
+     !some low density, low temperature regions give issues with nucleon blocking, so if rho<1e11, assume no nulceon blocking
+     if (eos_variables(rhoindex).ge.1.0d11) then
+        absorption_opacity = absorption_opacity + & !total opacity, dimensions cm^-1
+             numu_absorption_on_n(neutrino_energy,eos_variables)* & !crosssection, cm^2
+             neutron_number_density* &! # neutons/cm^3
+             max(0.0d0,(proton_number_density/neutron_number_density-1.0d0)/ & !final state proton blocking, =1 if blocking is irrelevant
+             (exp(-matter_muhat0/eos_variables(tempindex))-1.0d0)) !Bruenn 1985, Eq. C14
+     else
+        absorption_opacity = absorption_opacity + & !total opacity, dimensions cm^-1
+             numu_absorption_on_n(neutrino_energy,eos_variables)* & !crosssection, cm^2
+             neutron_number_density! # neutons/cm^3
+     endif
+
+     !just a check
+     if (absorption_opacity.ne.absorption_opacity) then
+        write(*,*) eos_variables(rhoindex),eos_variables(tempindex),eos_variables(yeindex)
+        stop "NaN's in absorption_crosssections.F90: add_numu_absorption_on_n:"
+     endif
+
+  endif
+
+  !add in the muon antineutrino absorption on free protons
+  if (add_anumu_absorption_on_p.and.neutrino_species.eq.5) then
+
+     !use minus muon chemical potential, equals muonplus chemical potential
+     !some low density, low temperature regions give issues with nucleon blocking, so if rho<1e11, assume no nulceon blocking
+     if (eos_variables(rhoindex).ge.1.0d11) then
+        absorption_opacity = absorption_opacity + & ! total opacity, dimensions cm^-1
+             anumu_absorption_on_p(neutrino_energy,eos_variables)* & !crosssection, cm^2
+             proton_number_density* & ! # protons/cm^3
+             max(0.0d0,(neutron_number_density/proton_number_density-1.0d0)/ & !final state neutron blocking, =1 if blocking is irrelevant
+             (exp(matter_muhat0/eos_variables(tempindex))-1.0d0)) !Bruenn 1985, Eq. C14, with n and p switched
+     else
+        absorption_opacity = absorption_opacity + & ! total opacity, dimensions cm^-1
+             anumu_absorption_on_p(neutrino_energy,eos_variables)* & !crosssection, cm^2
+             proton_number_density ! # protons/cm^3
+     endif
+
+     !just a check
+     if (absorption_opacity.ne.absorption_opacity) then
+        write(*,*) eos_variables(rhoindex),eos_variables(tempindex),eos_variables(yeindex)
+        stop "NaN's in absorption_crosssections.F90: add_anumu_absorption_on_p:"
+     endif
+  endif
+  
   !add in the adhoc nux absorption on neutrons and protons
   if (add_nux_absorption_on_n_and_p.and.(neutrino_species.eq.3.or.neutrino_species.eq.4 &
        .or.neutrino_species.eq.5.or.neutrino_species.eq.6)) then

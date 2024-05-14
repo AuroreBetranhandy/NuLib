@@ -21,14 +21,14 @@ program make_table_example
   ! species #1: electron neutrino             #2 electron antineutrino
   !         #3: muon neutrino                 #4 mu antineutrino
   !         #5: tau neutrino                  #6 tau antineutrino
-  integer :: mytable_neutrino_scheme = 1
+  integer :: mytable_neutrino_scheme = 3
 
   !number of species for nulib to calculation interactions for, must
   !be six currently, average is done via above parameter
   integer :: mytable_number_species = 6
 
   !number of species to output, must match comments above
-  integer :: number_output_species = 3
+  integer :: number_output_species = 6
 
   !number of energy groups
   integer :: mytable_number_groups = 12
@@ -51,7 +51,6 @@ program make_table_example
   real*8, allocatable,dimension(:,:,:,:,:) :: table_absopacity
   real*8, allocatable,dimension(:,:,:,:,:) :: table_scatopacity 
   real*8, allocatable,dimension(:,:,:,:,:) :: table_delta 
-  real*8, allocatable,dimension(:,:,:,:,:) :: table_mod_pp
 
 
 
@@ -67,8 +66,8 @@ program make_table_example
   real*8, allocatable,dimension(:) :: Itable_inE
   real*8, allocatable,dimension(:) :: Itable_n_N
   real*8, allocatable,dimension(:) :: Itable_Ye
-  real*8, allocatable,dimension(:,:,:,:,:) :: Itable_Phi0
-  real*8, allocatable,dimension(:,:,:,:,:) :: Itable_Phi1   
+  real*8, allocatable,dimension(:,:,:,:,:) :: Itable_Phi0,Itable_Phi0_muons
+  real*8, allocatable,dimension(:,:,:,:,:) :: Itable_Phi1,Itable_Phi1_muons   
   real*8, allocatable,dimension(:,:,:,:,:,:) :: epannihiltable_Phi0 !for ep-annihilation kernels, need both production and destruction kernels
   real*8, allocatable,dimension(:,:,:,:,:,:) :: epannihiltable_Phi1 !for ep-annihilation kernels, need both production and destruction kernels
   real*8, allocatable,dimension(:,:,:,:,:,:) :: bremsstrahlungtable_Phi0 !for ep-annihilation kernels, need both production and destruction kernels
@@ -84,13 +83,14 @@ program make_table_example
   !local variables to help in making tables
   integer :: irho,itemp,iye,ns,ng
   integer :: ieta,iinE,in_N
-  real*8, allocatable,dimension(:,:) :: local_pp_val
   real*8, allocatable,dimension(:,:) :: local_emissivity
   real*8, allocatable,dimension(:,:) :: local_absopacity
   real*8, allocatable,dimension(:,:) :: local_scatopacity
   real*8, allocatable,dimension(:,:) :: local_delta
   real*8, allocatable,dimension(:,:) :: local_Phi0
   real*8, allocatable,dimension(:,:) :: local_Phi1
+  real*8, allocatable,dimension(:,:) :: local_Phi0_muons
+  real*8, allocatable,dimension(:,:) :: local_Phi1_muons
   real*8, allocatable,dimension(:,:,:) :: local_Phi0_epannihil 
   real*8, allocatable,dimension(:,:,:) :: local_Phi1_epannihil 
   real*8, allocatable,dimension(:,:,:) :: local_Phi0_bremsstrahlung 
@@ -101,7 +101,7 @@ program make_table_example
   real*8 :: precision = 1.0d-10
   integer :: i
   real*8 dxfac,mindx
-  logical :: doing_inelastic, doing_epannihil,doing_bremsstrahlung,doing_bremsstrahlung_gang
+  logical :: doing_inelastic,doing_inelastic_muons, doing_epannihil,doing_bremsstrahlung,doing_bremsstrahlung_gang
   logical :: skip_emission
 
 #ifdef __MPI__  
@@ -148,30 +148,30 @@ program make_table_example
   adhoc_nux_factor = 0.0d0 !increase for adhoc nux heating (also set
                            !add_nux_absorption_on_n_and_p to true)
   !set up table
-  final_table_size_ye = 51
+  final_table_size_ye = 56
   final_table_size_rho = 82
-  final_table_size_temp = 65
+  final_table_size_temp = 100
   
-  final_Itable_size_temp = 65
-  final_Itable_size_eta = 61
-  final_Itable_size_n_N = 80
-  final_Itable_size_Ye =26
+  final_Itable_size_temp = 50!100
+  final_Itable_size_eta = 50!120
+  final_Itable_size_n_N = 40!80
+  final_Itable_size_Ye =25!50
   final_Itable_size_inE = mytable_number_groups
 
-  min_ye = 0.01d0 ! SRO 0.006 SFHo 0.01d0
-  max_ye = 0.554d0 !SRO&SFHo 0.554 
-  min_logrho = 6.0d0 ! SRO 3.1d0 ! SFHo 6.0d0
-  max_logrho = 15.0d0!SRO 16.0d0! SFHo 15.0d0 
-  min_logtemp =  -1.d0 ! SRO -1.99d0 ! SFHo -1.00d0 
-  max_logtemp = 2.19d0 !SRO 2.39d0 !SFHo 2.19d0
-  Imin_logtemp = -1.d0 !SRO -1.99d0 !SFHo -1.0d0
-  Imax_logtemp = 2.39d0 !SRO&SFHo 2.39d0
+  min_ye = 0.006d0  ! SFHo= 0.01d0 SRO=0.006d0
+  max_ye = 0.554d0 ! SFHo = 0.554 SRO=0.554
+  min_logrho = 3.024d0  ! SFHo=-2.19d0 SRO= 3.024
+  max_logrho = 16.023d0 ! SFHo = 15.49d0  SRO=16.023d0
+  min_logtemp = -1.9d0! SFHo= -2.9d0 SRO=-1.9d0
+  max_logtemp = 2.39d0! SFHo= 2.19 d0 SRO=2.39d0
+  Imin_logtemp = -2.99d0!log10(0.005d0)
+  Imax_logtemp = 2.19d0! log10(150.0d0)
   Imin_logeta = log10(0.1d0)
   Imax_logeta = log10(100.0d0)
   Imin_logn_N = 20.0d0! 35.0d0!
-  Imax_logn_N = 39.0d0! 
-  Imax_logYe = log10(0.015d0)
-  Imin_logYe = log10(0.5d0)
+  Imax_logn_N =  log10(1.0d39)!log10(1.0d39)!45.0d0! 
+  Imax_logYe = log10(0.6d0)
+  Imin_logYe = log10(0.0100d0)
   
   !set up energies bins
   do_integrated_BB_and_emissivity = .false.
@@ -232,8 +232,6 @@ endif
   allocate(table_rho(final_table_size_rho))
   allocate(table_temp(final_table_size_temp))
 
-  allocate(table_mod_pp(final_table_size_rho,final_table_size_temp, &
-       final_table_size_ye,number_output_species,mytable_number_groups))
   allocate(table_emission(final_table_size_rho,final_table_size_temp, &
        final_table_size_ye,number_output_species,mytable_number_groups))
   allocate(table_absopacity(final_table_size_rho,final_table_size_temp, &
@@ -258,7 +256,6 @@ endif
 #endif
   
   table_emission = 0.0d0
-  table_mod_pp = 0.0d0
 
   do iye=1,final_table_size_ye
      table_ye(iye) = min_ye+dble(iye-1)/dble(final_table_size_ye-1)*(max_ye-min_ye)
@@ -281,7 +278,7 @@ endif
   mpi_final_table_size_rho = recvcount
 #endif
 
-  !$OMP PARALLEL DO PRIVATE(itemp,iye,local_pp_val,local_emissivity,local_absopacity,local_scatopacity, &
+  !$OMP PARALLEL DO PRIVATE(itemp,iye,local_emissivity,local_absopacity,local_scatopacity, &
   !$OMP ns,ng,eos_variables,keytemp,keyerr,matter_prs,matter_ent,matter_cs2,matter_dedt, &
   !$OMP matter_dpderho,matter_dpdrhoe,local_delta) 
 #ifdef __MPI__
@@ -290,7 +287,6 @@ endif
   do irho=1,final_table_size_rho
 #endif
      !must do declarations here for openmp
-     allocate(local_pp_val(number_output_species,mytable_number_groups))
      allocate(local_emissivity(number_output_species,mytable_number_groups))
      allocate(local_absopacity(number_output_species,mytable_number_groups))
      allocate(local_scatopacity(number_output_species,mytable_number_groups))
@@ -321,7 +317,6 @@ endif
            call single_point_return_all(eos_variables, &
                 local_emissivity,local_absopacity,local_scatopacity, local_delta, &
                 mytable_neutrino_scheme)
-           call single_point_return_pp(eos_variables,local_pp_val,mytable_neutrino_scheme)
            
            !check that the number is not NaN or Inf (.gt.1.0d300)
            do ns=1,number_output_species
@@ -389,7 +384,6 @@ endif
                  table_scatopacity_node(displs(mpirank)+irho,itemp,iye,ns,ng) = local_scatopacity(ns,ng) !cm^-1
                  table_delta_node(displs(mpirank)+irho,itemp,iye,ns,ng) = local_delta(ns,ng) !dimensionless
 #else
-                 table_mod_pp(irho,itemp,iye,ns,ng) = local_pp_val(ns,ng) !ergs/cm^3/s/MeV/srad
                  table_emission(irho,itemp,iye,ns,ng) = local_emissivity(ns,ng) !ergs/cm^3/s/MeV/srad
                  table_absopacity(irho,itemp,iye,ns,ng) = local_absopacity(ns,ng) !cm^-1
                  table_scatopacity(irho,itemp,iye,ns,ng) = local_scatopacity(ns,ng) !cm^-1
@@ -402,7 +396,6 @@ endif
         enddo!do iye=1,final_table_size_ye
      enddo!do itemp=1,final_table_size_temp
 
-     deallocate(local_pp_val)
      deallocate(local_emissivity)
      deallocate(local_absopacity)
      deallocate(local_scatopacity)
@@ -452,6 +445,14 @@ endif
   else
      doing_inelastic = .false.
   endif
+  if (add_nue_Iscattering_muons.or.add_anue_Iscattering_muons.or. &
+       add_numu_Iscattering_muons.or.add_anumu_Iscattering_muons.or. &
+       add_nutau_Iscattering_muons.or.add_anutau_Iscattering_muons) then
+
+     doing_inelastic_muons = .true.
+  else
+     doing_inelastic_muons = .false.
+  endif
 
   if (add_nue_kernel_epannihil.or.add_anue_kernel_epannihil.or. &
        add_numu_kernel_epannihil.or.add_anumu_kernel_epannihil.or. &
@@ -481,7 +482,7 @@ endif
   
 
   if (doing_inelastic.or.doing_epannihil.or.doing_bremsstrahlung &
-		.or.doing_bremsstrahlung_gang) then
+		.or.doing_bremsstrahlung_gang .or. doing_inelastic_muons) then
 
      write(*,*) "Making Inelastic Table Opacity Table" 
 
@@ -531,6 +532,10 @@ endif
           final_Itable_size_inE,number_output_species,mytable_number_groups))
      allocate(Itable_Phi1(final_Itable_size_temp,final_Itable_size_eta, &
           final_Itable_size_inE,number_output_species,mytable_number_groups))
+     allocate(Itable_Phi0_muons(final_Itable_size_temp,final_Itable_size_eta, &
+          final_Itable_size_inE,number_output_species,mytable_number_groups))
+     allocate(Itable_Phi1_muons(final_Itable_size_temp,final_Itable_size_eta, &
+          final_Itable_size_inE,number_output_species,mytable_number_groups))
      allocate(epannihiltable_Phi0(final_Itable_size_temp,final_Itable_size_eta, &
           final_Itable_size_inE,number_output_species,mytable_number_groups,2))
      allocate(epannihiltable_Phi1(final_Itable_size_temp,final_Itable_size_eta, &
@@ -546,6 +551,13 @@ endif
      allocate(Itable_Phi0_node(final_Itable_size_temp,final_Itable_size_eta, &
           final_Itable_size_inE,number_output_species,mytable_number_groups))
      allocate(Itable_Phi1_node(final_Itable_size_temp,final_Itable_size_eta, &
+          final_Itable_size_inE,number_output_species,mytable_number_groups))
+#endif
+#ifdef __MPI__
+     !mpi node tables for inelastic
+     allocate(Itable_Phi0_muons_node(final_Itable_size_temp,final_Itable_size_eta, &
+          final_Itable_size_inE,number_output_species,mytable_number_groups))
+     allocate(Itable_Phi1_muons_node(final_Itable_size_temp,final_Itable_size_eta, &
           final_Itable_size_inE,number_output_species,mytable_number_groups))
 #endif
 
@@ -579,7 +591,7 @@ endif
           recvcount,mpi_double,0,mpi_comm_world,ierror)
      mpi_final_Itable_size_temp = recvcount
 #endif
-     !$OMP PARALLEL DO PRIVATE(local_Phi0,local_Phi1,local_Phi0_epannihil,local_Phi1_epannihil &
+     !$OMP PARALLEL DO PRIVATE(local_Phi0,local_Phi1,local_Phi0_muons,local_Phi1_muons,local_Phi0_epannihil,local_Phi1_epannihil &
      !$OMP ,local_Phi0_bremsstrahlung,local_Phi0_bremsstrahlung_gang,in_N,ieta,iinE,ns,ng)
      !loop over temp,eta,inE of table, do each point
 #ifdef __MPI__
@@ -590,6 +602,8 @@ endif
         !must do declarations here for openmp
         allocate(local_Phi0(number_output_species,mytable_number_groups))
         allocate(local_Phi1(number_output_species,mytable_number_groups))
+        allocate(local_Phi0_muons(number_output_species,mytable_number_groups))
+        allocate(local_Phi1_muons(number_output_species,mytable_number_groups))
         allocate(local_Phi0_epannihil(number_output_species,mytable_number_groups,2))
         allocate(local_Phi1_epannihil(number_output_species,mytable_number_groups,2))
         allocate(local_Phi0_bremsstrahlung(number_output_species,mytable_number_groups,2))
@@ -612,7 +626,16 @@ endif
               call single_Ipoint_return_all(iinE,Itable_eta(ieta), &
                    Itable_temp(itemp),local_Phi0,local_Phi1,mytable_neutrino_scheme)
 #endif
-              
+
+			if (doing_inelastic_muons) then
+#ifdef __MPI__
+              call single_muonscat_point_return_all(iinE,Itable_eta(ieta), &
+                   Itable_temp_subset(itemp),local_Phi0_muons,local_Phi1_muons,mytable_neutrino_scheme)
+#else
+              call single_muonscat_point_return_all(iinE,Itable_eta(ieta), &
+                   Itable_temp(itemp),local_Phi0_muons,local_Phi1_muons,mytable_neutrino_scheme)
+#endif
+              endif
               !fill in higher out energies with partner
               !Rout(iinE,E>iinE) is not calculated
               !set equal to Rin(E>iinE,iinE) which was calculated already
@@ -636,9 +659,81 @@ endif
 #endif
                  enddo
               enddo
-
+              !note, experience has taught us that if you interpolate these
+              !kernels you must reapply this symmetry after interpolation, we
+              !put them here for completeness.
+			if (doing_inelastic_muons) then
+              do ns=1,number_output_species
+                 do ng=iinE+1,final_Itable_size_inE
+#ifdef __MPI__
+                    local_Phi0_muons(ns,ng) = exp(-(energies(ng)-energies(iinE))/Itable_temp_subset(itemp))* &
+                         Itable_Phi0_node_muons(displs(mpirank)+itemp,ieta,ng,ns,iinE)
+                    local_Phi1_muons(ns,ng) = exp(-(energies(ng)-energies(iinE))/Itable_temp_subset(itemp))* &
+                         Itable_Phi1_node_muons(displs(mpirank)+itemp,ieta,ng,ns,iinE)
+#else
+                    local_Phi0_muons(ns,ng) = exp(-(energies(ng)-energies(iinE))/Itable_temp(itemp))* &
+                         Itable_Phi0_muons(itemp,ieta,ng,ns,iinE)
+                    local_Phi1_muons(ns,ng) = exp(-(energies(ng)-energies(iinE))/Itable_temp(itemp))* &
+                         Itable_Phi1_muons(itemp,ieta,ng,ns,iinE)
+#endif
+                 enddo
+              enddo
+			
               !calculate and check that the number is not NaN or Inf
               !(.gt.1.0d300)
+              do ns=1,number_output_species
+                 do ng=1,mytable_number_groups
+
+#ifdef __MPI__
+                    if (local_Phi0_muons(ns,ng).ne.local_Phi0_muons(ns,ng)) then
+                       write(*,"(a,1P2E18.9,i6,i6,i6)") "We have a NaN in Phi0", &
+                            Itable_temp_subset(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+                    if (local_Phi1_muons(ns,ng).ne.local_Phi1_muons(ns,ng)) then
+                       write(*,"(a,1P2E18.9,i6,i6,i6)") "We have a NaN in Phi1", &
+                            Itable_temp_subset(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+
+                    if (log10(local_Phi0_muons(ns,ng)).ge.300.0d0) then
+                       write(*,"(a,1P3E18.9,i6,i6,i6)") "We have a Inf in Phi0", &
+                            local_Phi0_muons(ns,ng),Itable_temp_subset(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+                    if (log10(local_Phi1_muons(ns,ng)).ge.300.0d0) then
+                       write(*,"(a,1P3E18.9,i6,i6,i6)") "We have a Inf in Phi1", &
+                            local_Phi1_muons(ns,ng),Itable_temp_subset(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+#else
+                    if (local_Phi0_muons(ns,ng).ne.local_Phi0_muons(ns,ng)) then
+                       write(*,"(a,1P2E18.9,i6,i6,i6)") "We have a NaN in Phi0", &
+                            Itable_temp(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+                    if (local_Phi1_muons(ns,ng).ne.local_Phi1_muons(ns,ng)) then
+                       write(*,"(a,1P2E18.9,i6,i6,i6)") "We have a NaN in Phi1", &
+                            Itable_temp(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+
+                    if (log10(local_Phi0_muons(ns,ng)).ge.300.0d0) then
+                       write(*,"(a,1P3E18.9,i6,i6,i6)") "We have a Inf in Phi0", &
+                            local_Phi0_muons(ns,ng),Itable_temp(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+                    if (log10(local_Phi1_muons(ns,ng)).ge.300.0d0) then
+                       write(*,"(a,1P3E18.9,i6,i6,i6)") "We have a Inf in Phi1", &
+                            local_Phi1_muons(ns,ng),Itable_temp(itemp),Itable_eta(ieta),iinE,ns,ng
+                       stop
+                    endif
+#endif
+			
+                 enddo !do ng=1,mytable_number_groups
+              enddo !do ns=1,number_output_species
+              !(.gt.1.0d300)
+              endif
               do ns=1,number_output_species
                  do ng=1,mytable_number_groups
 
@@ -704,6 +799,20 @@ endif
                  enddo !do ns=1,number_output_species
               enddo !do ng=1,mytable_number_groups
            
+			if (doing_inelastic_muons) then
+              !set global table
+              do ns=1,number_output_species
+                 do ng=1,mytable_number_groups
+#ifdef __MPI__
+                    Itable_Phi0_muons_node(displs(mpirank)+itemp,ieta,iinE,ns,ng) = local_Phi0_muons(ns,ng) !cm^3/s
+                    Itable_Phi1_muons_node(displs(mpirank)+itemp,ieta,iinE,ns,ng) = local_Phi1_muons(ns,ng) !cm^3/s
+#else
+                    Itable_Phi0_muons(itemp,ieta,iinE,ns,ng) = local_Phi0_muons(ns,ng) !cm^3/s
+                    Itable_Phi1_muons(itemp,ieta,iinE,ns,ng) = local_Phi1_muons(ns,ng) !cm^3/s
+#endif
+                 enddo !do ns=1,number_output_species
+              enddo !do ng=1,mytable_number_groups
+           endif
               call single_epannihil_kernel_point_return_all(iinE,Itable_eta(ieta), &
                    Itable_temp(itemp),local_Phi0_epannihil,local_Phi1_epannihil,mytable_neutrino_scheme)               
 
@@ -852,8 +961,8 @@ endif
 	
 	                 enddo !do ng=1,mytable_number_groups
 	              enddo !do ns=1,number_output_species
-!                      write(*,*)  local_Phi0_bremsstrahlung_gang(ns,ng,2)
-                      !set global table
+	
+	              !set global table
 	              do ns=1,number_output_species
 	                 do ng=1,mytable_number_groups
 	                    bremsstrahlungtable_gang_Phi0(itemp,in_N,iye,iinE,ns,ng,1) = local_Phi0_bremsstrahlung_gang(ns,ng,1) !cm^3/s
@@ -870,6 +979,8 @@ endif
 
         deallocate(local_Phi0)
         deallocate(local_Phi1)
+        deallocate(local_Phi0_muons)
+        deallocate(local_Phi1_muons)
         deallocate(local_Phi0_epannihil)
         deallocate(local_Phi1_epannihil)
         deallocate(local_Phi0_bremsstrahlung)
@@ -911,7 +1022,7 @@ endif
      timestamp = dble(values(1))*10000.0d0+dble(values(2))*100.0+dble(values(3)) + &
           (dble(values(5))+dble(values(6))/60.0d0 + dble(values(7))/3600.0d0 )/24.0
 
-     if (doing_inelastic.or.doing_epannihil.or.doing_bremsstrahlung) then
+     if (doing_inelastic.or.doing_epannihil.or.doing_bremsstrahlung .or. doing_inelastic_muons) then
         finaltable_filename = trim(adjustl(outdir))//trim(adjustl(base))//"_rho"//trim(adjustl(srho))// &
              "_temp"//trim(adjustl(stemp))//"_ye"//trim(adjustl(sye))// &
              "_ng"//trim(adjustl(sng))//"_ns"//trim(adjustl(sns))// &
@@ -1127,10 +1238,9 @@ contains
        call h5sclose_f(dspace_id, error)
        cerror = cerror + error
     endif
-           
-    
+        
     if (doing_inelastic.or.doing_epannihil.or.doing_bremsstrahlung&
-			.or.doing_bremsstrahlung_gang) then
+			.or.doing_bremsstrahlung_gang .or. doing_inelastic_muons) then
 
        rank = 1
        dims1(1) = 1
@@ -1235,6 +1345,32 @@ contains
        call h5dcreate_f(file_id, "inelastic_phi1", H5T_NATIVE_DOUBLE, &
             dspace_id, dset_id, error)
        call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE,Itable_Phi1, dims5, error)
+       call h5dclose_f(dset_id, error)
+       call h5sclose_f(dspace_id, error)  
+       cerror = cerror + error
+    endif
+
+    if(doing_inelastic_muons) then
+
+       rank = 5
+       dims5(1) = final_Itable_size_temp
+       dims5(2) = final_Itable_size_eta
+       dims5(3) = final_Itable_size_inE
+       dims5(4) = number_output_species  
+       dims5(5) = number_groups  
+       
+       call h5screate_simple_f(rank, dims5, dspace_id, error)
+       call h5dcreate_f(file_id, "inelastic_phi0_muons", H5T_NATIVE_DOUBLE, &
+            dspace_id, dset_id, error)
+       call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE,Itable_Phi0_muons, dims5, error)
+       call h5dclose_f(dset_id, error)
+       call h5sclose_f(dspace_id, error)  
+       cerror = cerror + error   
+       
+       call h5screate_simple_f(rank, dims5, dspace_id, error)
+       call h5dcreate_f(file_id, "inelastic_phi1_muons", H5T_NATIVE_DOUBLE, &
+            dspace_id, dset_id, error)
+       call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE,Itable_Phi1_muons, dims5, error)
        call h5dclose_f(dset_id, error)
        call h5sclose_f(dspace_id, error)  
        cerror = cerror + error

@@ -1,0 +1,425 @@
+diff -i src/absorption_crosssections.F90 saved_nulib/src/absorption_crosssections.F90
+345c345
+<   neutron_number_density = max(1.0d-100,eos_variables(xnindex))* &
+---
+>   neutron_number_density = max(1.0d-20,eos_variables(xnindex))* &
+347c347
+<   proton_number_density = max(1.0d-100,eos_variables(xpindex))* &
+---
+>   proton_number_density = max(1.0d-20,eos_variables(xpindex))* &
+diff -i src/bremsstrahlung.F90 saved_nulib/src/bremsstrahlung.F90
+233a234,235
+> !~ s_ND = sqrt(1.0d0+x*pi/4.0d0) - (1.0d0+(pi*x/4.0d0)**(5.0d0/4.0d0))**0.4d0&
+> !~ 		+ (1+ (64.0d0/(169.0d0*pi)*x)**(5.0d0/4.0d0))**(-0.4d0)
+291a294
+> !~ s_ND = (1.0d0+pi/4.0d0/x)**(0.5d0)
+344a348
+> !~ write(*,*) (nu_energy_x+nubar_energy_x)*matter_temperature
+347a352
+> !~ write(*,*) nu_energy_x*matter_temperature,nubar_energy_x*matter_temperature, 10**omega
+353a359,367
+> !~ 	write(*,*) omega, maxval(om_array), minval(om_array)
+> !~ 	write(*,*) abs(n_N_fm), 	maxval(abs(Itable_n_N)),minval(abs(Itable_n_N))
+> !~ 	write(*,*) abs(n_N_fm),minval(abs(Itable_n_N)),maxval(abs(Itable_n_N))
+> !~ 	write(*,*) abs(n_N_fm) .GT.maxval(abs(Itable_n_N)) 
+> !~ 	write(*,*)  abs(n_N_fm) .LT. minval(abs(Itable_n_N))
+> !~ 	write(*,*) omega .GT. maxval(om_array) 
+> !~ 	write(*,*) omega .LT. minval(om_array) 
+> !~ 	write(*,*) matter_temperature .GT. maxval(temp_array) 
+> !~ 	write(*,*)  matter_temperature .LT. minval(temp_array) 
+355a370,375
+> 
+> !~ 	call intp4d_many ( matter_temperature, n_N_fm, Ye,omega, S, gang_table, 25, 25&
+> !~ 						,26, 40, temp_array, Itable_n_N, Ye_array,om_array)
+> !~ 	call intp4d_many ( omega, Ye,n_N_fm, t_try, S,gang_table, 40, 26&
+> !~ 						,25, 25,om_array, Ye_array,Itable_n_N,temp_array)
+> !~ 	write(*,*) "n_N",n_N_fm
+361a382
+> !~ 	dx = 2.0d0
+364a386
+> !~ 	write(*,*) "plop", gang_table(:,2,2,2)
+368a391,392
+> !~ 	write(*,*) nu_energy_x,nubar_energy_x,S, indx,matter_temperature
+> !~ 	write(*,*) temp_array(indx), delt,eas_brem(indx)
+374a399,403
+> !~ write(*,*) "plop",Ye_array(16),(10**Itable_n_N(18))*(1.0d13)**3,n_N,temp_array(indx)&
+> !~ 			,indx &
+> !~ 			,matter_temperature
+> !~ write(*,*) gang_table(40,16,13,8),S
+> !~ write(*,*) indx
+376a406
+> !~ write(*,*) "S",S
+389a420
+> !~ write(*,*) omega
+Only in src/: .gitignore
+Only in src/: .goutputstream-L37UA0
+Only in src/: Interpolated_data.h5
+diff -i src/make_table_example.F90 saved_nulib/src/make_table_example.F90
+34c34
+<   integer :: mytable_number_groups = 12
+---
+>   integer :: mytable_number_groups = 18
+54,55d53
+<   real*8, allocatable,dimension(:,:,:,:,:) :: table_mod_pp
+< 
+87d84
+<   real*8, allocatable,dimension(:,:) :: local_pp_val
+151,153c148,150
+<   final_table_size_ye = 56
+<   final_table_size_rho = 82
+<   final_table_size_temp = 100
+---
+>   final_table_size_ye = 51
+>   final_table_size_rho = 91
+>   final_table_size_temp = 65
+155,156c152,153
+<   final_Itable_size_temp = 100
+<   final_Itable_size_eta = 120
+---
+>   final_Itable_size_temp = 65
+>   final_Itable_size_eta = 61
+158c155
+<   final_Itable_size_Ye =50
+---
+>   final_Itable_size_Ye = 26
+161,168c158,165
+<   min_ye = 0.01d0
+<   max_ye = 0.6d0
+<   min_logrho = -2.22024
+<   max_logrho = 15.5001
+<   min_logtemp = -2.99d0!log10(0.05d0)
+<   max_logtemp = 2.19d0!log10(150.0d0)
+<   Imin_logtemp = -2.99d0!log10(0.005d0)
+<   Imax_logtemp = 2.19d0! log10(150.0d0)
+---
+>   min_ye = 0.015d0
+>   max_ye = 0.55d0
+>   min_logrho = 5.0d0
+>   max_logrho = 15.5d0
+>   min_logtemp = log10(0.05d0)
+>   max_logtemp = log10(150.0d0)
+>   Imin_logtemp = log10(0.05d0)
+>   Imax_logtemp = log10(150.0d0)
+173,174c170,171
+<   Imax_logYe = log10(0.6d0)
+<   Imin_logYe = log10(0.0100d0)
+---
+>   Imax_logYe = log10(0.50d0)
+>   Imin_logYe = log10(0.015d0)
+235,236d231
+<   allocate(table_mod_pp(final_table_size_rho,final_table_size_temp, &
+<        final_table_size_ye,number_output_species,mytable_number_groups))
+261d255
+<   table_mod_pp = 0.0d0
+284c278
+<   !$OMP PARALLEL DO PRIVATE(itemp,iye,local_pp_val,local_emissivity,local_absopacity,local_scatopacity, &
+---
+>   !$OMP PARALLEL DO PRIVATE(itemp,iye,local_emissivity,local_absopacity,local_scatopacity, &
+293d286
+<      allocate(local_pp_val(number_output_species,mytable_number_groups))
+324d316
+<            call single_point_return_pp(eos_variables,local_pp_val,mytable_neutrino_scheme)
+382c374
+< 			
+---
+> 
+392d383
+<                  table_mod_pp(irho,itemp,iye,ns,ng) = local_pp_val(ns,ng) !ergs/cm^3/s/MeV/srad
+397d387
+<                  
+405d394
+<      deallocate(local_pp_val)
+1111,1112d1099
+< 
+<     
+1130,1142d1116
+<  
+<      if (separated_pair_processes) then 
+< 	    
+< 		call h5screate_simple_f(rank, dims5, dspace_id, error)
+< 		call h5dcreate_f(file_id, "mod_pp", H5T_NATIVE_DOUBLE, &
+< 			dspace_id, dset_id, error)
+< 		call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE,table_mod_pp, dims5, error)
+< 		call h5dclose_f(dset_id, error)
+< 		call h5sclose_f(dspace_id, error)  
+< 		cerror = cerror + error   
+<     endif
+<     
+<           
+Common subdirectories: src/nuc_eos and saved_nulib/src/nuc_eos
+diff -i src/nulib.F90 saved_nulib/src/nulib.F90
+159,206c159,206
+<       if (add_numu_kernel_epannihil.and.add_numu_emission_epannihil) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: numu"
+<       endif
+<       if (add_anumu_kernel_epannihil.and.add_anumu_emission_epannihil) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anumu"
+<       endif
+<       if (add_nutau_kernel_epannihil.and.add_nutau_emission_epannihil) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nutau"
+<       endif
+<       if (add_anutau_kernel_epannihil.and.add_anutau_emission_epannihil) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anutau"
+<       endif
+<       if (add_nue_kernel_bremsstrahlung.and.add_nue_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nue"
+<       endif
+<       if (add_anue_kernel_bremsstrahlung.and.add_anue_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anue"
+<       endif
+<       if (add_numu_kernel_bremsstrahlung.and.add_numu_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: numu"
+<       endif
+<       if (add_anumu_kernel_bremsstrahlung.and.add_anumu_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anumu"
+<       endif
+<       if (add_nutau_kernel_bremsstrahlung.and.add_nutau_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nutau"
+<       endif
+<       if (add_anutau_kernel_bremsstrahlung.and.add_anutau_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anutau"
+<       endif
+<       if (add_nue_kernel_gangguo.and.add_nue_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nue"
+<       endif
+<       if (add_anue_kernel_gangguo.and.add_anue_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anue"
+<       endif
+<       if (add_numu_kernel_gangguo.and.add_numu_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: numu"
+<       endif
+<       if (add_anumu_kernel_gangguo.and.add_anumu_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anumu"
+<       endif
+<       if (add_nutau_kernel_gangguo.and.add_nutau_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nutau"
+<       endif
+<       if (add_anutau_kernel_gangguo.and.add_anutau_emission_bremsstrahlung) then
+<          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anutau"
+<       endif
+---
+> !~       if (add_numu_kernel_epannihil.and.add_numu_emission_epannihil) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: numu"
+> !~       endif
+> !~       if (add_anumu_kernel_epannihil.and.add_anumu_emission_epannihil) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anumu"
+> !~       endif
+> !~       if (add_nutau_kernel_epannihil.and.add_nutau_emission_epannihil) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nutau"
+> !~       endif
+> !~       if (add_anutau_kernel_epannihil.and.add_anutau_emission_epannihil) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anutau"
+> !~       endif
+> !~       if (add_nue_kernel_bremsstrahlung.and.add_nue_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nue"
+> !~       endif
+> !~       if (add_anue_kernel_bremsstrahlung.and.add_anue_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anue"
+> !~       endif
+> !~       if (add_numu_kernel_bremsstrahlung.and.add_numu_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: numu"
+> !~       endif
+> !~       if (add_anumu_kernel_bremsstrahlung.and.add_anumu_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anumu"
+> !~       endif
+> !~       if (add_nutau_kernel_bremsstrahlung.and.add_nutau_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nutau"
+> !~       endif
+> !~       if (add_anutau_kernel_bremsstrahlung.and.add_anutau_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anutau"
+> !~       endif
+> !~       if (add_nue_kernel_gangguo.and.add_nue_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nue"
+> !~       endif
+> !~       if (add_anue_kernel_gangguo.and.add_anue_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anue"
+> !~       endif
+> !~       if (add_numu_kernel_gangguo.and.add_numu_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: numu"
+> !~       endif
+> !~       if (add_anumu_kernel_gangguo.and.add_anumu_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anumu"
+> !~       endif
+> !~       if (add_nutau_kernel_gangguo.and.add_nutau_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: nutau"
+> !~       endif
+> !~       if (add_anutau_kernel_gangguo.and.add_anutau_emission_bremsstrahlung) then
+> !~          stop "initialize_nulib: you can't both thermally emit nu with/without a kernel: anutau"
+> !~       endif
+638,639d637
+< 	  
+< 	  	
+746,869d743
+< 
+<     subroutine single_point_return_pp(eos_variables,table_mod_pp,neutrino_scheme)
+< 	  
+<       !inputs & outputs
+<       real*8, intent(in) :: eos_variables(total_eos_variables)
+<       integer, intent(in) :: neutrino_scheme
+< 	  real*8, dimension(:,:), intent(out) :: table_mod_pp
+< 
+< 	  ! local variables 
+< 	  real*8,dimension(3,number_groups) :: blackbody_spectra
+< 	  real*8 :: emissivities(3,number_groups)
+< 	  real*8 :: absorption_opacity(3,number_groups)
+< 	  integer ::  number_local_species
+< 	  real*8 :: temporary_spectra(number_species,number_groups)
+< 	  
+< 	  !initialisation
+<       table_mod_pp = 0.0d0	  
+< 	  emissivities = 0.0d0
+< 	  absorption_opacity = 0.0d0
+< 
+<       if (neutrino_scheme.eq.1) then
+<          number_local_species = 3
+<       else if (neutrino_scheme.eq.2) then
+<          number_local_species = 4
+<       else if (neutrino_scheme.eq.3) then
+<          number_local_species = 6
+<       else
+<          stop "single_point_return_all:incorrect neutrino scheme"
+<       endif
+< 	  
+< 
+< 
+< 	!!! now calculations for non thermal processes
+<       temporary_spectra = 0.0d0
+<       call return_emissivity_spectra_given_neutrino_scheme(temporary_spectra,eos_variables)
+<     
+<       !in units of the BBS, 1.0d-30 is ergs/cm^2/s/MeV/srad, i.e. 10km
+<       !object would radiate in a 1MeV bin 1e-17 ergs/s (1e-26 less than
+<       !a light bulb...).  This limits the BB to a finite value, with
+<       !the expontials in the definition it can get out of control and
+<       !be 0.0d0 which is not good for the division in the next line
+<       blackbody_spectra(:,:) = max(1.0d-30,blackbody_spectra(:,:))
+<      
+<       if (apply_kirchoff_to_pair_creation) then
+<          absorption_opacity(1,1:number_groups) = absorption_opacity(1,1:number_groups) + &
+<               temporary_spectra(1,1:number_groups)/blackbody_spectra(1,1:number_groups)
+<          absorption_opacity(2,1:number_groups) = absorption_opacity(2,1:number_groups) + &
+<               temporary_spectra(2,1:number_groups)/blackbody_spectra(2,1:number_groups)
+<       end if
+<       
+<       
+<       emissivities(1,1:number_groups) = emissivities(1,1:number_groups) + &
+<            temporary_spectra(1,1:number_groups)
+<       emissivities(2,1:number_groups) = emissivities(2,1:number_groups) + &
+<            temporary_spectra(2,1:number_groups)
+< 
+< 
+<       if (number_local_species.eq.3) then
+< 
+<          if (apply_kirchoff_to_pair_creation) then
+<             absorption_opacity(3,1:number_groups) = absorption_opacity(3,1:number_groups) + &
+<                  (temporary_spectra(3,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
+<                  temporary_spectra(4,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
+<                  temporary_spectra(5,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
+<                  temporary_spectra(6,1:number_groups)/blackbody_spectra(3,1:number_groups))/4.0d0
+<          end if
+<          emissivities(3,1:number_groups) = emissivities(3,1:number_groups) + &
+<               temporary_spectra(3,1:number_groups) + temporary_spectra(4,1:number_groups) + &
+<               temporary_spectra(5,1:number_groups) + temporary_spectra(6,1:number_groups)
+< 
+<       !average neutrinos and antineutrinos individually
+<       else if (number_local_species.eq.4) then
+<          if (apply_kirchoff_to_pair_creation) then
+<             absorption_opacity(3,1:number_groups) = absorption_opacity(3,1:number_groups) + &
+<                  (temporary_spectra(3,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
+<                  temporary_spectra(5,1:number_groups)/blackbody_spectra(3,1:number_groups))/2.0d0
+<             absorption_opacity(4,1:number_groups) = absorption_opacity(4,1:number_groups) + &
+<                  (temporary_spectra(4,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
+<                  temporary_spectra(6,1:number_groups)/blackbody_spectra(3,1:number_groups))/2.0d0
+<          end if
+<          emissivities(3,1:number_groups) = emissivities(3,1:number_groups) + &
+<               temporary_spectra(3,1:number_groups) + temporary_spectra(5,1:number_groups)
+<          emissivities(4,1:number_groups) = emissivities(4,1:number_groups) + &
+<               temporary_spectra(4,1:number_groups) + temporary_spectra(6,1:number_groups)
+< 
+<       !no averaging at all, what six different species
+<       else if (number_local_species.eq.6) then
+<          if (apply_kirchoff_to_pair_creation) then
+<             absorption_opacity(3,1:number_groups) = absorption_opacity(3,1:number_groups) + &
+<                  temporary_spectra(3,1:number_groups)/blackbody_spectra(3,1:number_groups)
+<             absorption_opacity(4,1:number_groups) = absorption_opacity(4,1:number_groups) + &
+<                  temporary_spectra(4,1:number_groups)/blackbody_spectra(3,1:number_groups)
+<             absorption_opacity(5,1:number_groups) = absorption_opacity(5,1:number_groups) + &
+<                  temporary_spectra(5,1:number_groups)/blackbody_spectra(3,1:number_groups)
+<             absorption_opacity(6,1:number_groups) = absorption_opacity(6,1:number_groups) + &
+<                  temporary_spectra(6,1:number_groups)/blackbody_spectra(3,1:number_groups)
+<          end if
+<          emissivities(3,1:number_groups) = emissivities(3,1:number_groups) + &
+<               temporary_spectra(3,1:number_groups)
+<          emissivities(4,1:number_groups) = emissivities(4,1:number_groups) + &
+<               temporary_spectra(4,1:number_groups)
+<          emissivities(5,1:number_groups) = emissivities(5,1:number_groups) + &
+<               temporary_spectra(5,1:number_groups)
+<          emissivities(6,1:number_groups) = emissivities(6,1:number_groups) + &
+<               temporary_spectra(6,1:number_groups)
+< 
+<       endif
+<       
+<       emissivities(:,:) = max(1.0d-300,emissivities(:,:)) !ergs/cm^3/s/MeV/srad
+<       absorption_opacity(:,:) = max(1.0d-300,absorption_opacity(:,:)) !cm^-1
+< 
+< 	  table_mod_pp(:,:) = absorption_opacity
+< 	
+< 
+<     end subroutine single_point_return_pp
+<     
+<     
+<     
+<     
+<     
+<     
+<     
+<     
+<     
+1174c1048
+<                Phi0s(4,ng,1) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,1,0) + &
+---
+>                Phi0s(3,ng,1) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,1,0) + &
+1176c1050
+<                Phi0s(4,ng,2) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,2,0) + &
+---
+>                Phi0s(3,ng,2) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,2,0) + &
+1178c1052
+<                Phi1s(4,ng,1) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,1,1) + &
+---
+>                Phi1s(3,ng,1) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,1,1) + &
+1180c1054
+<                Phi1s(4,ng,2) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,2,1) + &
+---
+>                Phi1s(3,ng,2) = (epannihil_Phi_Bruenn(nu_energy_x,nuother_energy_x,eta,4,2,1) + &
+Common subdirectories: src/other_eos and saved_nulib/src/other_eos
+diff -i src/requested_interactions.inc saved_nulib/src/requested_interactions.inc
+17c17
+<   logical :: add_nux_absorption_on_n_and_p = .false.
+---
+>   logical :: add_nux_absorption_on_n_and_p = .true.
+69,72c69,72
+<   logical :: add_numu_emission_bremsstrahlung = .true.
+<   logical :: add_anumu_emission_bremsstrahlung = .true.
+<   logical :: add_nutau_emission_bremsstrahlung = .true.
+<   logical :: add_anutau_emission_bremsstrahlung = .true.	
+---
+>   logical :: add_numu_emission_bremsstrahlung = .false.
+>   logical :: add_anumu_emission_bremsstrahlung = .false.
+>   logical :: add_nutau_emission_bremsstrahlung = .false.
+>   logical :: add_anutau_emission_bremsstrahlung = .false.	
+79,82d78
+<   logical :: separated_pair_processes = .false.
+< 
+< 
+< 
+102,105c98,101
+<   logical :: add_numu_kernel_gangguo = .false.
+<   logical :: add_anumu_kernel_gangguo = .false.
+<   logical :: add_nutau_kernel_gangguo = .false.
+<   logical :: add_anutau_kernel_gangguo = .false.
+---
+>   logical :: add_numu_kernel_gangguo = .true.
+>   logical :: add_anumu_kernel_gangguo = .true.
+>   logical :: add_nutau_kernel_gangguo = .true.
+>   logical :: add_anutau_kernel_gangguo = .true.
+Only in src/: scripts
+Common subdirectories: src/weakrates and saved_nulib/src/weakrates
