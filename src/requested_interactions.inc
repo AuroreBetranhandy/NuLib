@@ -10,14 +10,10 @@
   logical :: do_transport_opacities = .true.
   real*8, parameter :: gAs = -0.2d0 !dimensionless, for the strange coupling
 
-  !final state blocking options
-  logical :: do_breunn_final_state_nucleon_blocking_abs = .true.
-  logical :: do_breunn_final_state_nucleon_blocking_scat = .true.
-
   !absorptions
   logical :: add_nue_absorption_on_n = .true.
   logical :: add_anue_absorption_on_p = .true.
-  logical :: add_nue_absorption_on_A = .false.
+  logical :: add_nue_absorption_on_A = .true.
   logical :: add_nux_absorption_on_n_and_p = .false.
 
   !scatterings
@@ -68,17 +64,23 @@
   logical :: add_nutau_emission_epannihil = .true.
   logical :: add_anutau_emission_epannihil = .true.
 
-  logical :: add_nue_emission_NNBrems = .false.
-  logical :: add_anue_emission_NNBrems = .false.
-  logical :: add_numu_emission_NNBrems = .true.
-  logical :: add_anumu_emission_NNBrems = .true.
-  logical :: add_nutau_emission_NNBrems = .true.
-  logical :: add_anutau_emission_NNBrems = .true.	
+  logical :: add_nue_emission_bremsstrahlung = .false.
+  logical :: add_anue_emission_bremsstrahlung = .false.
+  logical :: add_numu_emission_bremsstrahlung = .true.
+  logical :: add_anumu_emission_bremsstrahlung = .true.
+  logical :: add_nutau_emission_bremsstrahlung = .true.
+  logical :: add_anutau_emission_bremsstrahlung = .true.	
 
-  logical :: add_nue_emission_weakinteraction_ecap = .true.
-  logical :: add_anue_emission_weakinteraction_poscap = .true.
+  logical :: Gang_emission=.false.
+  logical :: Hann_emission=.true.
+
+  logical :: add_nue_emission_weakinteraction_ecap = .false.
+  logical :: add_anue_emission_weakinteraction_poscap = .false.
 
   logical :: apply_kirchoff_to_pair_creation = .true.
+
+
+
 
   !kernels for full calculation of thermal processes
   logical :: add_nue_kernel_epannihil = .false.
@@ -87,3 +89,19 @@
   logical :: add_anumu_kernel_epannihil = .false.
   logical :: add_nutau_kernel_epannihil = .false.
   logical :: add_anutau_kernel_epannihil = .false.
+  
+  !kernels for full calculation of thermal processes
+  logical :: add_nue_kernel_bremsstrahlung = .false.
+  logical :: add_anue_kernel_bremsstrahlung = .false.
+  logical :: add_numu_kernel_bremsstrahlung = .false.
+  logical :: add_anumu_kernel_bremsstrahlung = .false.
+  logical :: add_nutau_kernel_bremsstrahlung = .false.
+  logical :: add_anutau_kernel_bremsstrahlung = .false.
+  
+  !kernels from gang 
+  logical :: add_nue_kernel_gangguo = .false.
+  logical :: add_anue_kernel_gangguo = .false.
+  logical :: add_numu_kernel_gangguo = .false.
+  logical :: add_anumu_kernel_gangguo = .false.
+  logical :: add_nutau_kernel_gangguo = .false.
+  logical :: add_anutau_kernel_gangguo = .false.

@@ -45,6 +45,54 @@ function single_neutrino_emissivity_from_epannihil_given_energyrange( &
 
 end function single_neutrino_emissivity_from_epannihil_given_energyrange
 
+function single_neutrino_emissivity_from_NNBrem_given_energyrange( &
+     neutrino_species,range_bottom,range_top,eos_variables) result(emissivity)
+  
+  use nulib
+  implicit none
+
+  !inputs
+  real*8, intent(in) :: eos_variables(total_eos_variables)
+  integer, intent(in) :: neutrino_species !one of six, each have different coupling constants
+  real*8, intent(in) :: range_bottom !MeV, lower energy of integral
+  real*8, intent(in) :: range_top !MeV, upper energy of integral
+  
+  !output
+  real*8 :: emissivity !total emissivity
+
+  !function declarations
+  real*8 :: Brem_dQdenu
+  real*8 :: fermidirac_dimensionless
+
+  !local, GPQ variables
+  integer :: i
+  real*8 :: nu_energy,nu_energy_x,matter_temperature,n_N,Ye
+  real*8 :: range_top_x, range_bottom_x
+  real*8 :: preamble
+
+!~   preamble = 8.0d0*pi**2/(2.0d0*pi*hbarc_mevcm)**6*eos_variables(tempindex)**9*mev_to_erg* &
+!~        Gfermi**2*hbarc_mevcm**2*clight/pi !units (MeV*cm)^-6 * MeV^9 * erg*MeV^-1 * MeV^-4 (MeV*cm)^2 * cm*s^-1 = erg/cm^3/s
+  preamble = 1.0d0/(2.0d0*pi*hbarc_mevcm)**6 * matter_temperature**6 /(4.0d0*pi)*mev_to_erg
+
+  range_top_x = range_top/eos_variables(tempindex)
+  range_bottom_x = range_bottom/eos_variables(tempindex)
+  matter_temperature = eos_variables(tempindex)
+  n_N = eos_variables(rhoindex)/(m_amu*mev_to_gram)
+  Ye = eos_variables(yeindex)
+
+  emissivity = 0.0d0
+  do i=1,4
+     nu_energy_x = (range_top_x-range_bottom_x)/2.0d0*GPQ_n4_roots(i)+(range_top_x+range_bottom_x)/2.0d0
+     emissivity = emissivity + &
+          Brem_dQdenu(nu_energy_x,matter_temperature,n_N,Ye,neutrino_species)* &
+          GPQ_n4_weights(i)*nu_energy_x**3
+  end do
+
+  emissivity = preamble*emissivity*(range_top_x-range_bottom_x)/ &
+       (2.0d0*(range_top-range_bottom)) !ergs/cm^3/s/MeV/srad
+
+end function single_neutrino_emissivity_from_NNBrem_given_energyrange
+
 function single_neutrino_emissivity_from_epannihil_given_energypoint( &
      neutrino_species,nu_energy,eos_variables) result(emissivity)
   
@@ -72,7 +120,11 @@ function single_neutrino_emissivity_from_epannihil_given_energypoint( &
   preamble = 8.0d0*pi**2/(2.0d0*pi*hbarc_mevcm)**6*eos_variables(tempindex)**9*mev_to_erg* &
        Gfermi**2*hbarc_mevcm**2*clight/pi !units (MeV*cm)^-6 * MeV^9 * erg*MeV^-1 * MeV^-4 (MeV*cm)^2 * cm*s^-1 = erg/cm^3/s
   
+  
+  
+  
   eta = eos_variables(mueindex)/eos_variables(tempindex)
+!~   eta = 0.0d0
   nu_energy_x = nu_energy/eos_variables(tempindex)
 
   emissivity = epannihil_dQdenu_BRT06(nu_energy_x,eta,neutrino_species)*nu_energy_x**3
@@ -83,50 +135,50 @@ end function single_neutrino_emissivity_from_epannihil_given_energypoint
 
 !we do the simpliest thing possible here (BRT06+approximations)
 !should improve to include arbitrary degeneracy and better integration (i.e. no BRT06 fits)
-function single_neutrino_emissivity_from_NNBrem_given_energyrange( &
-     neutrino_species,range_bottom,range_top,eos_variables) result(emissivity)
+!~ function single_neutrino_emissivity_from_NNBrem_given_energyrange( &
+!~      neutrino_species,range_bottom,range_top,eos_variables) result(emissivity)
 
-  use nulib
-  implicit none
+!~   use nulib
+!~   implicit none
 
-  !inputs
-  real*8, intent(in) :: eos_variables(total_eos_variables)
-  integer, intent(in) :: neutrino_species !one of six, each may have different coupling constants
-  real*8, intent(in) :: range_bottom !MeV, lower energy of integral
-  real*8, intent(in) :: range_top !MeV, upper energy of integral
+!~   !inputs
+!~   real*8, intent(in) :: eos_variables(total_eos_variables)
+!~   integer, intent(in) :: neutrino_species !one of six, each may have different coupling constants
+!~   real*8, intent(in) :: range_bottom !MeV, lower energy of integral
+!~   real*8, intent(in) :: range_top !MeV, upper energy of integral
   
-  !output
-  real*8 :: emissivity !total emissivity
+!~   !output
+!~   real*8 :: emissivity !total emissivity
 
-  !function declarations
-  !real*8 :: NNBrem_dQdenu_BRT06 ! do not yet need this, but should improve emissivity, so will
+!~   !function declarations
+!~   !real*8 :: NNBrem_dQdenu_BRT06 ! do not yet need this, but should improve emissivity, so will
 
-  !local, GPQ variables
-  integer :: i
-  real*8 :: nu_energy,nu_energy_x,eta
-  real*8 :: range_top_x, range_bottom_x
-  real*8 :: preamble_1,preamble_2
+!~   !local, GPQ variables
+!~   integer :: i
+!~   real*8 :: nu_energy,nu_energy_x,eta
+!~   real*8 :: range_top_x, range_bottom_x
+!~   real*8 :: preamble_1,preamble_2
 
-  !this is the total emission rate, with fix from Adam
-  preamble_1 = 2.0778d30*0.5d0*(eos_variables(xnindex)**2+eos_variables(xpindex)**2+ &
-       eos_variables(xnindex)*eos_variables(xpindex)*28.0d0/3.0d0)* &
-       (eos_variables(rhoindex)/1.0d14)**2*eos_variables(tempindex)**5.5d0 !erg/cm^3/s
-  preamble_2 = 0.234d0
+!~   !this is the total emission rate, with fix from Adam
+!~   preamble_1 = 2.0778d30*0.5d0*(eos_variables(xnindex)**2+eos_variables(xpindex)**2+ &
+!~        eos_variables(xnindex)*eos_variables(xpindex)*28.0d0/3.0d0)* &
+!~        (eos_variables(rhoindex)/1.0d14)**2*eos_variables(tempindex)**5.5d0 !erg/cm^3/s
+!~   preamble_2 = 0.234d0
 
-  range_top_x = range_top/eos_variables(tempindex)
-  range_bottom_x = range_bottom/eos_variables(tempindex)
-  eta = eos_variables(mueindex)/eos_variables(tempindex)
+!~   range_top_x = range_top/eos_variables(tempindex)
+!~   range_bottom_x = range_bottom/eos_variables(tempindex)
+!~   eta = eos_variables(mueindex)/eos_variables(tempindex)
 
-  emissivity = 0.0d0
-  do i=1,4
-     nu_energy_x = (range_top_x-range_bottom_x)/2.0d0*GPQ_n4_roots(i)+(range_top_x+range_bottom_x)/2.0d0
-     emissivity = emissivity + nu_energy_x**2.4d0*exp(-1.1d0*nu_energy_x)*GPQ_n4_weights(i)
-  end do
+!~   emissivity = 0.0d0
+!~   do i=1,4
+!~      nu_energy_x = (range_top_x-range_bottom_x)/2.0d0*GPQ_n4_roots(i)+(range_top_x+range_bottom_x)/2.0d0
+!~      emissivity = emissivity + nu_energy_x**2.4d0*exp(-1.1d0*nu_energy_x)*GPQ_n4_weights(i)
+!~   end do
 
-  emissivity = preamble_1*preamble_2*emissivity*(range_top_x-range_bottom_x)/ &
-       (2.0d0*(range_top-range_bottom)*4.0d0*pi) !ergs/cm^3/s/MeV/srad
+!~   emissivity = preamble_1*preamble_2*emissivity*(range_top_x-range_bottom_x)/ &
+!~        (2.0d0*(range_top-range_bottom)*4.0d0*pi) !ergs/cm^3/s/MeV/srad
 
-end function single_neutrino_emissivity_from_NNBrem_given_energyrange
+!~ end function single_neutrino_emissivity_from_NNBrem_given_energyrange
 
 !we do the simpliest thing possible here (BRT06+approximations, eq. 145)
 !should improve to include arbitrary degeneracy and better integration (i.e. no BRT06 fits)
@@ -140,30 +192,37 @@ function single_neutrino_emissivity_from_NNBrem_given_energypoint( &
   real*8, intent(in) :: eos_variables(total_eos_variables)
   integer, intent(in) :: neutrino_species !one of six, each may have different coupling constants
   real*8, intent(in) :: nu_energy !MeV, energy of point
-
   !output
   real*8 :: emissivity !total emissivity
-
   !function declarations
-  !real*8 :: NNBrem_dQdenu_BRT06 ! do not yet need this, but should improve emissivity, so will
-
+  real*8 :: Brem_dQdenu
+  real*8 :: fermidirac_dimensionless
   !local, GPQ variables
   integer :: i
-  real*8 :: nu_energy_x,eta
-  real*8 :: preamble_1,preamble_2
+  real*8 :: nu_energy_x,matter_temperature,n_N,Ye
+  real*8 :: preamble
+  matter_temperature = eos_variables(tempindex)
+  n_N = eos_variables(rhoindex)/(m_n*mev_to_gram)
+  Ye = eos_variables(yeindex)
+  
 
-  !this is the total emission rate, with fix from Adam
-  preamble_1 = 2.0778d30*0.5d0*(eos_variables(xnindex)**2+eos_variables(xpindex)**2+ &
-       eos_variables(xnindex)*eos_variables(xpindex)*28.0d0/3.0d0)* &
-       (eos_variables(rhoindex)/1.0d14)**2*eos_variables(tempindex)**5.5d0 !erg/cm^3/s
-  preamble_2 = 0.234d0
-
-  eta = eos_variables(mueindex)/eos_variables(tempindex)
-
+!~     preamble = 8.0d0*pi**2/(2.0d0*pi*hbarc_mevcm)**6*eos_variables(tempindex)**7*mev_to_erg* &
+!~       
+    
+    
+    
+  preamble = 4.0d0*pi/(2.0d0 * pi *hbarc_mevcm)**3*eos_variables(tempindex)**6*mev_to_erg!1.0d0/(hbarc_mevcm)**6 * matter_temperature**6 /(4.0d0*pi)*mev_to_erg
+  
+  
   nu_energy_x = nu_energy/eos_variables(tempindex)
-  emissivity = nu_energy_x**2.4d0*exp(-1.1d0*nu_energy_x)
+  
+  emissivity = Brem_dQdenu(nu_energy_x,eos_variables,neutrino_species)&
+			* nu_energy_x**3
 
-  emissivity = preamble_1*preamble_2*emissivity/(eos_variables(tempindex)*4.0d0*pi) !ergs/cm^3/s/MeV/srad
+  emissivity =  preamble* emissivity/(4.0d0*pi) !ergs/cm^3/s/MeV/srad
+  
+
+
 
 end function single_neutrino_emissivity_from_NNBrem_given_energypoint
 
@@ -204,7 +263,7 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
      endif
 
      !add in the electron neutrino emission from Nucleon-Nucleon bremsstrahlung
-     if (add_nue_emission_NNBrems) then
+     if (add_nue_emission_bremsstrahlung) then
         if (do_integrated_BB_and_emissivity) then
            total_emissivity = total_emissivity + & !total emmissivity, dimensions ergs/cm^3/s/MeV/srad
                 single_neutrino_emissivity_from_NNBrem_given_energyrange( &
@@ -232,7 +291,7 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
      endif
 
      !add in the electron antineutrino emission from Nucleon-Nucleon bremsstrahlung
-     if (add_anue_emission_NNBrems) then
+     if (add_anue_emission_bremsstrahlung) then
         if (do_integrated_BB_and_emissivity) then
            total_emissivity = total_emissivity + & !total emmissivity, dimensions ergs/cm^3/s/MeV/srad
                 single_neutrino_emissivity_from_NNBrem_given_energyrange( &
@@ -260,7 +319,7 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
      endif
 
      !add in the mu neutrino emission from Nucleon-Nucleon bremsstrahlung
-     if (add_numu_emission_NNBrems) then
+     if (add_numu_emission_bremsstrahlung) then
         if (do_integrated_BB_and_emissivity) then
            total_emissivity = total_emissivity + & !total emmissivity, dimensions ergs/cm^3/s/MeV/srad
                 single_neutrino_emissivity_from_NNBrem_given_energyrange( &
@@ -288,7 +347,7 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
      endif
 
      !add in the mu antineutrino emission from Nucleon-Nucleon bremsstrahlung
-     if (add_anumu_emission_NNBrems) then
+     if (add_anumu_emission_bremsstrahlung) then
         if (do_integrated_BB_and_emissivity) then
            total_emissivity = total_emissivity + & !total emmissivity, dimensions ergs/cm^3/s/MeV/srad
                 single_neutrino_emissivity_from_NNBrem_given_energyrange( &
@@ -298,6 +357,8 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
                 single_neutrino_emissivity_from_NNBrem_given_energypoint( &
                 neutrino_species,energy_point,eos_variables)
         endif
+!~         write(*,*) single_neutrino_emissivity_from_NNBrem_given_energyrange( &
+!~                 neutrino_species,energy_bottom,energy_top,eos_variables)
      endif
   endif
      
@@ -316,7 +377,7 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
      endif
 
      !add in the tau neutrino emission from Nucleon-Nucleon bremsstrahlung
-     if (add_nutau_emission_NNBrems) then
+     if (add_nutau_emission_bremsstrahlung) then
         if (do_integrated_BB_and_emissivity) then
            total_emissivity = total_emissivity + & !total emmissivity, dimensions ergs/cm^3/s/MeV/srad
                 single_neutrino_emissivity_from_NNBrem_given_energyrange( &
@@ -332,6 +393,7 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
   if (neutrino_species.eq.6) then     
      !add in the tau antineutrino emission from ep annihilation
      if (add_anutau_emission_epannihil) then
+     		
         if (do_integrated_BB_and_emissivity) then
            total_emissivity = total_emissivity + & !total emmissivity, dimensions ergs/cm^3/s/MeV/srad
                 single_neutrino_emissivity_from_epannihil_given_energyrange( &
@@ -344,7 +406,7 @@ subroutine total_emissivities(neutrino_species,energy_point,energy_bottom,energy
      endif
 
      !add in the tau antineutrino emission from Nucleon-Nucleon bremsstrahlung
-     if (add_anutau_emission_NNBrems) then
+     if (add_anutau_emission_bremsstrahlung) then
         if (do_integrated_BB_and_emissivity) then
            total_emissivity = total_emissivity + & !total emmissivity, dimensions ergs/cm^3/s/MeV/srad
                 single_neutrino_emissivity_from_NNBrem_given_energyrange( &
@@ -406,6 +468,7 @@ subroutine return_emissivity_spectra_given_neutrino_scheme(emissivity_spectra,eo
            emissivity_spectra(ns,:) = emissivity_spectra(ns,:) + ec_emissivity(:) !erg/cm^3/s/MeV/srad
         end if
         if (add_anue_emission_weakinteraction_poscap.and.ns.eq.2) then
+           stop "emissivities :: anue weak rates are not yet implemented"
            call microphysical_electron_capture(ns,eos_variables,ec_emissivity)
            emissivity_spectra(ns,:) = emissivity_spectra(ns,:) + ec_emissivity(:) !erg/cm^3/s/MeV/srad
         end if
