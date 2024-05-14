@@ -1,110 +1,5 @@
 !-*-f90-*-
 
-!-*-f90-*-
-function Brem_dQdenu(nu_energy_x,eos_variables,neutrino_species) result(Brem_dQ)
-
-  use nulib!, only : GLQ_n16_roots, GLQ_n16_weights,Gang_emission,Hann_emission
-  implicit none
-
-  !inputs
-  real*8, intent(in) :: nu_energy_x !neutrino energy/Temp
-  real*8, intent(in) :: eos_variables(total_eos_variables)
-  real*8 :: matter_temperature,n_N,Ye
-
-
-  integer, intent(in) :: neutrino_species !neutrino species, will affect some coeffs
-
-  !output
-  real*8 :: Brem_dQ
-
-  !local, GLQ integration
-  integer :: i,inde
-  real*8 :: nubar_energy_x,n_N_Hann
-
-  !function declarations
-  real*8 :: Bremsstrahlung_Phi0_gang !function declaration
-  real*8 :: Bremsstrahlung_Phi0_Hannestad !function declaration
-  
-  
-  
-  matter_temperature = eos_variables(tempindex)
-  n_N = eos_variables(rhoindex)/(m_amu*mev_to_gram)
-  Ye = eos_variables(yeindex)
-  
-  
-  
-  Brem_dQ = 0.0d0
-  
-  
-     if ( Gang_emission .and. .not. Hann_emission) then 
-	  do i=1,16
-		 nubar_energy_x = GLQ_n16_roots(i) 
-		 Brem_dQ = Brem_dQ + &
-			  nubar_energy_x**2 &
-			  *Bremsstrahlung_Phi0_gang(nu_energy_x,nubar_energy_x&
-         ,matter_temperature,n_N,Ye,neutrino_species,0)*GLQ_n16_weights(i) &
-         /(2.0d0* pi * hbarc_mevcm)**3 *2.0d0*pi 
-	  enddo 
-
-   else if (Hann_emission .and. .not. Gang_emission ) then 
-
-   
-	  do i=1,16
-	  nubar_energy_x = GLQ_n16_roots(i)
-!~ 	  write(*,*) "x_n",eos_variables(xnindex),"x_p",eos_variables(xpindex),eos_variables(rhoindex)
-		do inde=1,3
-		   
-		  ! neutron-neutron  n_n
-		      if (inde .EQ. 1) then 
-		      if (eos_variables(xnindex) .LE. 1.0d-50) return
-				n_N_Hann = eos_variables(rhoindex)&
-						*eos_variables(xnindex)&
-						/(m_n*mev_to_gram)
-			  
-			  Brem_dQ = Brem_dQ + &
-				  nubar_energy_x**2*Bremsstrahlung_Phi0_Hannestad(nu_energy_x,nubar_energy_x&
-	              ,matter_temperature,n_N_Hann,neutrino_species,0) &
-	               /(2.0d0* pi * hbarc_mevcm)**3 *2.0d0*pi  *GLQ_n16_weights(i)
-			
-			  ! proton-proton n_n
-			  else if (inde .EQ. 2 ) then 
-			  if (eos_variables(xpindex) .LE. 1.0d-50) return
-  				  n_N_Hann = eos_variables(rhoindex)&
-						*eos_variables(xpindex)&
-						/(m_p*mev_to_gram)
-						
-			  Brem_dQ = Brem_dQ + &
-				  nubar_energy_x**2*Bremsstrahlung_Phi0_Hannestad(nu_energy_x,nubar_energy_x&
-				  ,matter_temperature,n_N_Hann,neutrino_species,0) &
-  	               /(2.0d0* pi * hbarc_mevcm)**3 *2.0d0*pi  *GLQ_n16_weights(i)
-			  
-			  ! neutron-proton  n_n
-			  else if (inde .EQ. 3 ) then
-				if (eos_variables(xpindex) .EQ. 1.0d-50) return
-				  n_N_Hann = eos_variables(rhoindex)	&
-						*sqrt(eos_variables(xnindex)*eos_variables(xpindex))&
-  				       /(sqrt(m_p*m_n)*mev_to_gram)
-  				       
-  				   Brem_dQ = Brem_dQ + 28.0d0/3.0d0* &
-					nubar_energy_x**2*Bremsstrahlung_Phi0_Hannestad(nu_energy_x,nubar_energy_x&
-					,matter_temperature,n_N_Hann,neutrino_species,0) &
-					 /(2.0d0* pi * hbarc_mevcm)**3 *2.0d0*pi  *GLQ_n16_weights(i)
-			  else 
-				write(*,*) "Wrong number of species for brem test"
-				stop
-			  endif
-		     
-		enddo
-		Brem_dQ = Brem_dQ 
-	  enddo
-	  
-   else 
-		write(*,*) "Bremsstrahlung emission scheme wrong"
-		stop
-   endif 
-   
-!~    write(*,*) Brem_dQ
-end function Brem_dQdenu
 
 
 function  Bremsstrahlung_Phi0_Hannestad(nu_energy_x,nubar_energy_x&
@@ -454,9 +349,7 @@ indx=0
 if ( matter_temperature .GT. maxval(temp_array) .or. matter_temperature .LT. minval(temp_array) &
 	.or.  Ye .GT. maxval(Ye_array) .or. Ye .LT. minval(Ye_array) &
 	.or.  abs(n_N_fm) .GE. maxval(abs(Itable_n_N)) .or. abs(n_N_fm) .LE. minval(abs(Itable_n_N))  & 
-	.or. abs(n_N) .GE. 1.0d39 .or. abs(n_N) .LE. 1.0d35  & 
 	.or.  omega .GT. maxval(om_array) .or. omega .LT. minval(om_array) ) then
-!~ 	write(*,*) "test"
 	
 else 
 
@@ -499,7 +392,7 @@ end if
 if (Phi0_nn .LT. 0.0d0) then 
 	write(*,*) " brem negative : problem"
 	write(*,*) "S",S,"Phi0_nn :", Phi0_nn,"Ye :", Ye, "omega :",omega,"n :"&
-				,n_N_fm,"n_cm : ",n_N, "n_N_max :",maxval(abs(Itable_n_N)), "T :", matter_temperature,"pro_ann :",pro_ann
+				,n_N_fm,"n_cm : ",n_N,"T :", matter_temperature,"pro_ann :",pro_ann
 	write(*,*) eas_brem
 	write(*,*) "arg", shape(eas_brem), shape(gang_table)
 	write(*,*)

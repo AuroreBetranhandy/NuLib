@@ -205,7 +205,7 @@ function epannihil_H0_Bruenn(nu_energy,nubar_energy,electron_energy,neutrino_spe
        )/(Ea*Eb)
   
 
-  H0 = H0_constants(1,neutrino_species)*J0I + H0_constants(2,neutrino_species)*J0II
+  H0 = H0_constants(1,neutrino_species,1)*J0I + H0_constants(2,neutrino_species,1)*J0II
 
 contains
   function HeavySide(arguement) result(answer)
@@ -337,7 +337,7 @@ function epannihil_H1_Bruenn(nu_energy,nubar_energy,electron_energy,neutrino_spe
        )/(Ea*Eb)
   
 
-  H1 = H0_constants(1,neutrino_species)*J1I + H0_constants(2,neutrino_species)*J1II
+  H1 = H0_constants(1,neutrino_species,1)*J1I + H0_constants(2,neutrino_species,1)*J1II
 
 contains
   function HeavySide(arguement) result(answer)

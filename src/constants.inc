@@ -4,6 +4,7 @@
   real*8, parameter :: gA = 1.254d0 !dimensionless
   real*8, parameter :: delta_np = 1.293332d0 !MeV
   real*8, parameter :: m_e = 0.510998910d0  !MeV
+  real*8, parameter :: m_mu = 105.66d0  !MeV
   real*8, parameter :: m_e_x2 = (0.510998910d0)**2 !MeV^2
   real*8, parameter :: m_n = 939.565346d0 !MeV
   real*8, parameter :: m_p = 938.272013d0 !MeV
@@ -11,6 +12,7 @@
   real*8, parameter :: m_pi =  139.57018d0 !MeV
   real*8, parameter :: m_alpha = 3727.379240 !MeV
   real*8, parameter :: sin2thetaW = 0.23d0 !dimensionless
+  real*8, parameter :: cabbibo_angle=0.97427 ! dimensionless, added in abs on free nucleons (from Bollig thesis 2018)
   real*8, parameter :: clight = 29979245800.0d0 !cm/s
   real*8, parameter :: pi = 3.141592653589793238462643383279d0
   real*8, parameter :: hbarc_ergcm = 3.1615262d-17! in erg*cm
@@ -19,6 +21,7 @@
   real*8, parameter :: log10exp = 0.43429448190325182765 !dimensionless = log_{10}(exp(1))
   real*8, parameter :: planck = 6.626176d-27 !h (i.e. hbar*2*pi), in cgs
   real*8, parameter :: avo = 6.0221367d23 !N_A, avogadro's number
+  real*8, parameter :: gAs = -0.2d0 !dimensionless, for the strange coupling
 
 
   !conversions

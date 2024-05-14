@@ -31,7 +31,7 @@ program bremsstrahlung_point_example
   integer :: mypoint_number_output_species = 3
 
   !number of energy groups
-  integer :: mypoint_number_groups = 18 !18
+  integer :: mypoint_number_groups = 50 !18
 
   character*200 :: parameters = "./parameters"
 
@@ -60,7 +60,7 @@ program bremsstrahlung_point_example
   real*8 :: Q,Q_ann,Q2,Q2_ann,M,dE_dEdt,dE_dEdt2,dE_dEdt3,dE_dEdt1_ann,dE_dEdt2_ann,dE_dEdt3_ann,k,N,M2
   real*8 :: Kuro_inv_lamb,Hann_inv_lamb,epan_inv_lamb
   real*8 :: dn_dEdt,dn_dEdt2,dn_dEdt3,ratio,ratio_2,dn_dEdt_burrows
-  real*8 :: dE_dEdt_2,dE_dEdt2_2,dE_dEdt3_2,dE_dEdt_burrows,dn_dEdt_bruenn,dE_dEdt_Bruenn
+  real*8 :: dE_dEdt_2,dE_dEdt2_2,dE_dEdt3_2,dE_dEdt_burrows,dn_dEdt_bruenn
   real*8 :: Bremsstrahlung_Phi0_Hannestad
   real*8 :: Bremsstrahlung_Phi0_Kuroda
   real*8 :: Bremsstrahlung_Phi0_gang
@@ -174,36 +174,11 @@ program bremsstrahlung_point_example
   write(*,*) "X_n: ",eos_variables(xnindex)
   write(*,*) "X_p: ",eos_variables(xpindex)
   write(*,*) "X_alpha: ",eos_variables(xaindex)
+  write(*,*) "X_muons: ",eos_variables(mumuindex)
   
-!~   write(*,*) energy_shift
-  
-!~   write(*,*) eos_variables(energyindex)
-!~   write(*,*) eos_variables(xpindex)
-!~   eos_variables(:) = 0.0d0
-!~   eos_variables(tempindex) = 0.012d0
-    
-!~   open(unit=100, file="EOS_table_T=0.dat")
-!~   do i = 1,size(rho_array)
-!~     eos_variables(rhoindex) = 10**rho_array(i)
-!~ 	do j = 1,13
-!~ 		  eos_variables(yeindex) = ye_array(j)
-!~     	  call set_eos_variables(eos_variables)
-!~ 		  eps_array(j) = eos_variables(energyindex)
-!~ 	enddo
-!~ 	write(100,*) eps_array
-!~   enddo
-  
-!~   close(100)
-!~   stop
-  
-  
-!~   open(unit=100,file='test_temp_rho.dat')
-  
-!~   do i = 1,size(R_test)
-!~ 	read(100,*,IOSTAT=j) R_test(i),rho_test(i),T_test(i),Ye_test(i)
+ 
 
-!~   enddo
-!~   close(100)
+write(*,*) "tetst"
   if (add_nue_kernel_bremsstrahlung.or.add_anue_kernel_bremsstrahlung.or. &
        add_numu_kernel_bremsstrahlung.or.add_anumu_kernel_bremsstrahlung.or. &
        add_nutau_kernel_bremsstrahlung.or.add_anutau_kernel_bremsstrahlung .or. &
@@ -224,14 +199,9 @@ program bremsstrahlung_point_example
      allocate(Phi0_brem_ann(mypoint_number_groups))
      allocate(Phi0_brem2_ann(mypoint_number_groups))
      
-     write(*,*) "enter_function"
-     write(*,*) "var", 1 ,energies(mypoint_number_groups),eos_variables,total_eos_variables
      
-     write(*,*) eos_variables(tempindex),eos_variables(rhoindex)/(m_n*mev_to_gram),eos_variables(yeindex)
-     write(*,*) "brem emi", single_neutrino_emissivity_from_NNBrem_given_energypoint(1 &
-     ,energies(mypoint_number_groups),eos_variables)
-     write(*,*) "brem emi", single_neutrino_emissivity_from_NNBrem_given_energypoint(1 &
-     ,energies(mypoint_number_groups),eos_variables)
+     write(*,*) "brem emi", single_neutrino_emissivity_from_NNBrem_given_energypoint( &
+     3,energies(mypoint_number_groups),eos_variables)
      
 	write(*,*) "echem",eos_variables(mueindex),energies(11)
 	write(*,*) "echem fermi",fermidirac_dimensionless( &
@@ -247,13 +217,24 @@ program bremsstrahlung_point_example
 !~ 	  write(*,*) 'test'
 !~       open(unit = 404, file = name_list(zone)  )
       open(unit = 404, file = "brem.txt"  )
+        
+!~ 	  xrho =  rho_figure(zone)!(1*10**(-1.00d0)) * m_n*mev_to_gram* 1.0d39 ! 1.665d13!! 4.435d13 !g/cm^3
+!~ 	  xtemp = 3.0d0*(xrho/1.0d11)**(1.0d0/3.0d0)!14.511804010728726d0! !MeV
+!~ 	  xye = 0.2
+!~ 	  write(*,*) xrho,xtemp,xye
+!~ 	  stop
+
+!~ 	  eos_variables(rhoindex) = xrho
+!~ 	  eos_variables(tempindex) = xtemp
+!~ 	  eos_variables(yeindex) = xye
+
 
 	  call set_eos_variables(eos_variables)
 
      ratio_2 = 0.0d0   
 	 S_sigma_static = 0.0d0
      do i=1,mypoint_number_groups !neutrino energ
-!~ 		write(*,*) i
+	
 		
 !~ 		dE_dEdt = 0.0d0
 !~ 		dE_dEdt2 = 0.0d0
@@ -303,7 +284,7 @@ program bremsstrahlung_point_example
 				write(*,*) "Wrong number of species for brem test"
 			  endif
 
-			  
+	
 
 			  ! Hannestad version
 	          call single_bremsstrahlung_kernel_point_return_all_Hannestad(i, &
@@ -319,6 +300,7 @@ program bremsstrahlung_point_example
 	          eos_variables(tempindex)&
 	 	      ,local_Phi0_bremsstrahlung2,mypoint_neutrino_scheme) 
 
+!~ 			  write(*,*) eos_variables(rhoindex)/(m_amu*mev_to_gram),n_N
 			  ! Hannestad production kernels
 	          if (inde .LT. 3) then 
 		          Phi0_brem = Phi0_brem + local_Phi0_bremsstrahlung(3,:,1)
@@ -341,13 +323,23 @@ program bremsstrahlung_point_example
 		      
 		      
 		      
-
+		      ! Kuroda production kernels
+!~ 	          if (inde .LT. 3) then 
+!~ 		          Phi0_brem2 = Phi0_brem2 + local_Phi0_bremsstrahlung2(3,:,1)
+		           
+!~ 		      else if ( inde .EQ. 3)  then 		! factor for neutron-proton process
+!~ 				  Phi0_brem2 = Phi0_brem2 + &
+!~ 							  28.0d0/3.0d0*local_Phi0_bremsstrahlung2(3,:,1) 
+!~ 		      endif
 			 if ( inde .EQ. 1)  then 	
 			  Phi0_brem2 = Phi0_brem2 + local_Phi0_bremsstrahlung2(3,:,1)
 		      endif
 		      
-
-
+		      
+		      
+		      ! Kuroda annihilation kernels
+!~ 	          if (inde .LT. 3) then 
+!~ 		          Phi0_brem2_ann = Phi0_brem2_ann + local_Phi0_bremsstrahlung2(3,:,2) 
 		          
 		      if ( inde .EQ. 1)  then 		! factor for neutron-proton process
 				  Phi0_brem2_ann = Phi0_brem2_ann + &
@@ -367,25 +359,33 @@ program bremsstrahlung_point_example
 			ratio = 0.0d0
 			ratio_2 = 0.0d0
 			
+			
 			! Loop over antineutrino energies
 	        do j=1,mypoint_number_groups 
-				
+!~ 				write(*,*) j 
 				! Kotake pair production rates
 				
 !~ 				! 		Hannestad 
 				Q = Q + energies(j)**2	 /(2.0d0* pi * hbarc_mevcm)**3&
 					  *2.0d0*pi  *bin_widths(j) &
 					 * Phi0_brem(j) 
-
+!~ 					 * local_Phi0_bremsstrahlung(3,j,1)
+						    
+!~ 				! 		Hannestad 
+!~ 				Q = Q + (dble(j)/10.0d0)**2	 /(2.0d0* pi * hbarc_mevcm)**3&
+!~ 					  *2.0d0*pi  *((dble(j+1)-dble(j))/10.0d0)&!*bin_widths(j) &
+!~ 					 * Bremsstrahlung_Phi0_Hannestad((dble(i))/xtemp,(dble(j)/10.0d0)/xtemp,&
+!~ 						xtemp,xrho/(m_n*mev_to_gram),3,0)
 						    
 				Q_ann = Q_ann + energies(j)**2	 /(2.0d0* pi * hbarc_mevcm)**3&
 					  * bin_widths(j) *2.0d0*pi&
 					  * Phi0_brem_ann(j)
 
-				
+						    
 				!		Kuroda/gang
 				Q2 = Q2 + energies(j)**2  /(2.0d0* pi * hbarc_mevcm)**3 &
 					 * bin_widths(j) *2.0d0*pi &
+!~ 					 * Phi0_brem2(j) 
 					 * bremsstrahlung_Phi0_gang(energies(i)/eos_variables(tempindex) &
 							,energies(j)/eos_variables(tempindex) &
 							,eos_variables(tempindex), eos_variables(rhoindex)/(m_n*mev_to_gram),xye,3,0)
@@ -402,11 +402,10 @@ program bremsstrahlung_point_example
 					  bremsstrahlung_Phi0_gang(energies(i)/eos_variables(tempindex), &
 							energies(j)/eos_variables(tempindex) &
 							,eos_variables(tempindex), eos_variables(rhoindex)/(m_n*mev_to_gram),xye,3,1)
-				
+	
 				! 		electron-positron 
 				M = M + energies(j)**2  /(2.0d0* pi * hbarc_mevcm)**3&
 					*2.0d0*pi* local_Phi0_epannihil(3,j,1) * bin_widths(j) 
-					
 				M2 = M2 + energies(j)**2  /(2.0d0* pi * hbarc_mevcm)**3&
 					*2.0d0*pi* local_Phi0_epannihil(3,j,2) * bin_widths(j) 
 					
@@ -427,13 +426,14 @@ program bremsstrahlung_point_example
 						 *M
 			!		Burrows
 	        dn_dEdt_burrows =single_neutrino_emissivity_from_NNBrem_given_energypoint(3,&
-							     energies(i),eos_variables)/mev_to_erg/energies(i)
-							     
+							     energies(i),eos_variables)/mev_to_erg*(4.0d0*pi)/energies(i)&
+							     /(4.0d0 *pi)
 						 
 			!		Bruenn epan
 	        dn_dEdt_bruenn =single_neutrino_emissivity_from_epannihil_given_energypoint(3,&
-							     energies(i),eos_variables)/mev_to_erg/energies(i)
-							     
+							     energies(i),eos_variables)/mev_to_erg*(4.0d0*pi)/energies(i)&
+							     /(4.0d0 *pi)
+						 
 						 
 			!!!energy production spectra
 			
@@ -458,11 +458,9 @@ program bremsstrahlung_point_example
 						 * (4.0d0 * pi) * M2
 
 			!		Energy production spectra Burrows
-			dE_dEdt_burrows = single_neutrino_emissivity_from_NNBrem_given_energypoint(3,&
-							     energies(i),eos_variables)/mev_to_erg
+			dE_dEdt_burrows = single_neutrino_emissivity_from_NNBrem_given_energypoint(1,&
+							     energies(i),eos_variables)/mev_to_erg*(4.0d0*pi)
 							     
-			dE_dEdt_Bruenn = single_neutrino_emissivity_from_epannihil_given_energypoint(3,&
-							     energies(i),eos_variables)/mev_to_erg   
 			!!! inverse mean free path for comparaison with Bruenn 2018
 			
 							     
@@ -471,14 +469,14 @@ program bremsstrahlung_point_example
 	
         write(404,*) energies(i) &
 					,dn_dEdt,dn_dEdt2,dn_dEdt3 &
-					,dn_dEdt_burrows&
+					,dn_dEdt_burrows &
 					,dn_dEdt_bruenn &
 					,dE_dEdt &!/n_N & !
 					,dE_dEdt2 &!/n_N & !
 					,dE_dEdt3 &!/n_N & !
 					,dE_dEdt_burrows &!/n_N & !
 					,dE_dEdt-dE_dEdt2,dE_dEdt-dE_dEdt_burrows &
-					,ratio,dE_dEdt2-dE_dEdt_burrows,dE_dEdt_Bruenn
+					,ratio,dE_dEdt2-dE_dEdt_burrows
      enddo 
 !~ enddo
 eta_star = (hbarc_mevcm/clight  * (3.0d0 * pi **2 * xrho/(m_n*mev_to_gram))&
@@ -489,8 +487,8 @@ eta_star = (hbarc_mevcm/clight  * (3.0d0 * pi **2 * xrho/(m_n*mev_to_gram))&
 close(404)
 
 
-stop
 
+stop
 
 
 write(*,*) "S_sigma_static"
@@ -582,7 +580,7 @@ do i=1,400
 	write(60,*) dble(i)/1.0d0,dn_dEdt,dn_dEdt2
 enddo
 close(60)
-!~ stop
+stop
      
      
      !! reproduce Fig. 4.2  in Raffelt 1985 

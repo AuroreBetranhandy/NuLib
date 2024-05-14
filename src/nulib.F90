@@ -33,7 +33,7 @@ module nulib
   real*8 :: m_ref !MeV
 
   !constants for routines
-  real*8 :: H0_constants(2,6)
+  real*8 :: H0_constants(2,6,2)
   real*8 :: Sion_coeffs(6,4)
 
   !Gauss Laguerre (L) and Legendre (P) weights and roots
@@ -51,7 +51,7 @@ module nulib
 
   !EOS variables index holders, we carry this around with us to
   !instead of globally setting it for easy parallization
-  integer :: total_eos_variables = 15
+  integer :: total_eos_variables = 16
   integer :: rhoindex =1
   integer :: tempindex = 2
   integer :: yeindex = 3
@@ -83,7 +83,7 @@ module nulib
   integer(HSIZE_T) :: dims4_gang(4)
   integer :: error_gang,rank_gang,cerror_gang
   integer(HID_T) :: file_id_gang,dset_id_gang,dspace_id_gang
-  INTEGER(HID_T) :: dataspace     ! 
+ INTEGER(HID_T) :: dataspace     ! 
       INTEGER(HSIZE_T), DIMENSION(4) :: dimsr, maxdimsr
   
   !special terms
@@ -300,28 +300,55 @@ module nulib
 
       !setup H0_constants for electron positron annihilation and inelastic electron scattering, also constants for the H1 term...
       !standard
-      H0_constants(1,1) =  (0.5d0+2.0d0*sin2thetaW + 0.5d0)**2 !(Cv+Ca)^2, electron neutrino
-      H0_constants(2,1) =  (0.5d0+2.0d0*sin2thetaW - 0.5d0)**2 !(Cv-Ca)^2, electron neutrino
+      H0_constants(1,1,1) =  (0.5d0+2.0d0*sin2thetaW + 0.5d0)**2 !(Cv+Ca)^2, electron neutrino
+      H0_constants(2,1,1) =  (0.5d0+2.0d0*sin2thetaW - 0.5d0)**2 !(Cv-Ca)^2, electron neutrino
 
       !Ca flips sign from standard
-      H0_constants(1,2) =  (0.5d0+2.0d0*sin2thetaW + (-0.5d0))**2 !(Cv+Ca)^2, electron antineutrino
-      H0_constants(2,2) =  (0.5d0+2.0d0*sin2thetaW - (-0.5d0))**2 !(Cv-Ca)^2, electron antineutrino
+      H0_constants(1,2,1) =  (0.5d0+2.0d0*sin2thetaW + (-0.5d0))**2 !(Cv+Ca)^2, electron antineutrino
+      H0_constants(2,2,1) =  (0.5d0+2.0d0*sin2thetaW - (-0.5d0))**2 !(Cv-Ca)^2, electron antineutrino
 
       !Cv -> Cv-1, Ca -> Ca-1  from standard
-      H0_constants(1,3) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (0.5d0 - 1.0d0))**2 !(Cv+Ca)^2, mu neutrino
-      H0_constants(2,3) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (0.5d0 - 1.0d0))**2 !(Cv-Ca)^2, mu neutrino
+      H0_constants(1,3,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (0.5d0 - 1.0d0))**2 !(Cv+Ca)^2, mu neutrino
+      H0_constants(2,3,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (0.5d0 - 1.0d0))**2 !(Cv-Ca)^2, mu neutrino
 
       !Cv -> Cv-1, Ca -> Ca-1  from standard
-      H0_constants(1,5) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (0.5d0 - 1.0d0))**2 !(Cv+Ca)^2, tau neutrino
-      H0_constants(2,5) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (0.5d0 - 1.0d0))**2 !(Cv-Ca)^2, tau neutrino
+      H0_constants(1,5,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (0.5d0 - 1.0d0))**2 !(Cv+Ca)^2, tau neutrino
+      H0_constants(2,5,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (0.5d0 - 1.0d0))**2 !(Cv-Ca)^2, tau neutrino
 
       !Cv -> Cv-1, Ca -> Ca-1 , then Ca-1 flips sign 
-      H0_constants(1,4) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (-(0.5d0 - 1.0d0)))**2 !(Cv+Ca)^2, mu antineutrino
-      H0_constants(2,4) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (-(0.5d0 - 1.0d0)))**2 !(Cv-Ca)^2, mu antineutrino
+      H0_constants(1,4,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (-(0.5d0 - 1.0d0)))**2 !(Cv+Ca)^2, mu antineutrino
+      H0_constants(2,4,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (-(0.5d0 - 1.0d0)))**2 !(Cv-Ca)^2, mu antineutrino
 
       !Cv -> Cv-1, Ca -> Ca-1 , then Ca-1 flips sign 
-      H0_constants(1,6) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (-(0.5d0 - 1.0d0)))**2 !(Cv+Ca)^2, tau antineutrino
-      H0_constants(2,6) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (-(0.5d0 - 1.0d0)))**2 !(Cv-Ca)^2, tau antineutrino
+      H0_constants(1,6,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (-(0.5d0 - 1.0d0)))**2 !(Cv+Ca)^2, tau antineutrino
+      H0_constants(2,6,1) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (-(0.5d0 - 1.0d0)))**2 !(Cv-Ca)^2, tau antineutrino
+
+
+
+      !setup H0_constants for and inelastic muon scattering, also constants for the H1 term...
+      !standard
+      H0_constants(1,1,2) =  (-0.5d0+2.0d0*sin2thetaW - 0.5d0)**2 !(Cv+Ca)^2, electron neutrino
+      H0_constants(2,1,2) =  (-0.5d0+2.0d0*sin2thetaW + 0.5d0)**2 !(Cv-Ca)^2, electron neutrino
+
+      !Ca flips sign from standard
+      H0_constants(1,2,2) =  (-0.5d0+2.0d0*sin2thetaW + (0.5d0))**2 !(Cv+Ca)^2, electron antineutrino
+      H0_constants(2,2,2) =  (-0.5d0+2.0d0*sin2thetaW - (0.5d0))**2 !(Cv-Ca)^2, electron antineutrino
+
+      !Cv -> Cv-1, Ca -> Ca-1  from standard
+      H0_constants(1,3,2) =  ((0.5d0+2.0d0*sin2thetaW ) + (0.5d0 ))**2 !(Cv+Ca)^2, mu neutrino
+      H0_constants(2,3,2) =  ((0.5d0+2.0d0*sin2thetaW ) - (0.5d0 ))**2 !(Cv-Ca)^2, mu neutrino
+
+      !Cv -> Cv-1, Ca -> Ca-1  from standard
+      H0_constants(1,5,2) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (0.5d0 - 1.0d0))**2 !(Cv+Ca)^2, tau neutrino
+      H0_constants(2,5,2) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (0.5d0 - 1.0d0))**2 !(Cv-Ca)^2, tau neutrino
+
+      !Cv -> Cv-1, Ca -> Ca-1 , then Ca-1 flips sign 
+      H0_constants(1,4,2) =  ((0.5d0+2.0d0*sin2thetaW ) + (-(0.5d0 )))**2 !(Cv+Ca)^2, mu antineutrino
+      H0_constants(2,4,2) =  ((0.5d0+2.0d0*sin2thetaW ) - (-(0.5d0 )))**2 !(Cv-Ca)^2, mu antineutrino
+
+      !Cv -> Cv-1, Ca -> Ca-1 , then Ca-1 flips sign 
+      H0_constants(1,6,2) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) + (-(0.5d0 - 1.0d0)))**2 !(Cv+Ca)^2, tau antineutrino
+      H0_constants(2,6,2) =  ((0.5d0+2.0d0*sin2thetaW - 1.0d0) - (-(0.5d0 - 1.0d0)))**2 !(Cv-Ca)^2, tau antineutrino
 
       !setup ion-ion correlation cooefficients for Chuck's fits
       Sion_coeffs = 0.0d0
@@ -360,8 +387,7 @@ module nulib
       call GaussLegendreQuadrature_weights_and_roots(128,GPQ_n128_roots,GPQ_n128_weights)
 
 	  if (add_anutau_kernel_gangguo .or. add_nutau_kernel_gangguo .or. &
-			add_anumu_kernel_gangguo .or. add_numu_kernel_gangguo &
-                .or. Gang_emission) then
+			add_anumu_kernel_gangguo .or. add_numu_kernel_gangguo) then
 			
 			
 		!open HDF5 file, given filename                                                                                             
@@ -471,31 +497,31 @@ module nulib
       endif
 
       if (size(emissivities,1).ne.number_local_species) then
-         stop "single_point_return_all:provided array has wrong number of species"
+         stop "single_point_return_all:emissivity array has wrong number of species"
       endif
       if (size(emissivities,2).ne.number_groups) then
-         stop "single_point_return_all:provided array has wrong number of groups"
+         stop "single_point_return_all:emissivity array has wrong number of groups"
       endif
 
       if (size(absorption_opacity,1).ne.number_local_species) then
-         stop "single_point_return_all:provided array has wrong number of species"
+         stop "single_point_return_all:absorption array has wrong number of species"
       endif
       if (size(absorption_opacity,2).ne.number_groups) then
-         stop "single_point_return_all:provided array has wrong number of groups"
+         stop "single_point_return_all:absorption array has wrong number of groups"
       endif
 
       if (size(scattering_opacity,1).ne.number_local_species) then
-         stop "single_point_return_all:provided array has wrong number of species"
+         stop "single_point_return_all:scattering array has wrong number of species"
       endif
       if (size(scattering_opacity,2).ne.number_groups) then
-         stop "single_point_return_all:provided array has wrong number of groups"
+         stop "single_point_return_all:scattering array has wrong number of groups"
       endif
 
       if (size(delta,1).ne.number_local_species) then
-         stop "single_point_return_all:provided array has wrong number of species"
+         stop "single_point_return_all:delta array has wrong number of species"
       endif
       if (size(delta,2).ne.number_groups) then
-         stop "single_point_return_all:provided array has wrong number of groups"
+         stop "single_point_return_all:delta array has wrong number of groups"
       endif
 
       emissivities = 0.0d0
@@ -744,131 +770,8 @@ module nulib
 
 
     end subroutine single_point_return_all
-
-
-    subroutine single_point_return_pp(eos_variables,table_mod_pp,neutrino_scheme)
-	  
-      !inputs & outputs
-      real*8, intent(in) :: eos_variables(total_eos_variables)
-      integer, intent(in) :: neutrino_scheme
-	  real*8, dimension(:,:), intent(out) :: table_mod_pp
-
-	  ! local variables 
-	  real*8,dimension(3,number_groups) :: blackbody_spectra
-	  real*8 :: emissivities(3,number_groups)
-	  real*8 :: absorption_opacity(3,number_groups)
-	  integer ::  number_local_species
-	  real*8 :: temporary_spectra(number_species,number_groups)
-	  
-	  !initialisation
-      table_mod_pp = 0.0d0	  
-	  emissivities = 0.0d0
-	  absorption_opacity = 0.0d0
-
-      if (neutrino_scheme.eq.1) then
-         number_local_species = 3
-      else if (neutrino_scheme.eq.2) then
-         number_local_species = 4
-      else if (neutrino_scheme.eq.3) then
-         number_local_species = 6
-      else
-         stop "single_point_return_all:incorrect neutrino scheme"
-      endif
-	  
-
-
-	!!! now calculations for non thermal processes
-      temporary_spectra = 0.0d0
-      call return_emissivity_spectra_given_neutrino_scheme(temporary_spectra,eos_variables)
     
-      !in units of the BBS, 1.0d-30 is ergs/cm^2/s/MeV/srad, i.e. 10km
-      !object would radiate in a 1MeV bin 1e-17 ergs/s (1e-26 less than
-      !a light bulb...).  This limits the BB to a finite value, with
-      !the expontials in the definition it can get out of control and
-      !be 0.0d0 which is not good for the division in the next line
-      blackbody_spectra(:,:) = max(1.0d-30,blackbody_spectra(:,:))
-     
-      if (apply_kirchoff_to_pair_creation) then
-         absorption_opacity(1,1:number_groups) = absorption_opacity(1,1:number_groups) + &
-              temporary_spectra(1,1:number_groups)/blackbody_spectra(1,1:number_groups)
-         absorption_opacity(2,1:number_groups) = absorption_opacity(2,1:number_groups) + &
-              temporary_spectra(2,1:number_groups)/blackbody_spectra(2,1:number_groups)
-      end if
-      
-      
-      emissivities(1,1:number_groups) = emissivities(1,1:number_groups) + &
-           temporary_spectra(1,1:number_groups)
-      emissivities(2,1:number_groups) = emissivities(2,1:number_groups) + &
-           temporary_spectra(2,1:number_groups)
-
-
-      if (number_local_species.eq.3) then
-
-         if (apply_kirchoff_to_pair_creation) then
-            absorption_opacity(3,1:number_groups) = absorption_opacity(3,1:number_groups) + &
-                 (temporary_spectra(3,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
-                 temporary_spectra(4,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
-                 temporary_spectra(5,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
-                 temporary_spectra(6,1:number_groups)/blackbody_spectra(3,1:number_groups))/4.0d0
-         end if
-         emissivities(3,1:number_groups) = emissivities(3,1:number_groups) + &
-              temporary_spectra(3,1:number_groups) + temporary_spectra(4,1:number_groups) + &
-              temporary_spectra(5,1:number_groups) + temporary_spectra(6,1:number_groups)
-
-      !average neutrinos and antineutrinos individually
-      else if (number_local_species.eq.4) then
-         if (apply_kirchoff_to_pair_creation) then
-            absorption_opacity(3,1:number_groups) = absorption_opacity(3,1:number_groups) + &
-                 (temporary_spectra(3,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
-                 temporary_spectra(5,1:number_groups)/blackbody_spectra(3,1:number_groups))/2.0d0
-            absorption_opacity(4,1:number_groups) = absorption_opacity(4,1:number_groups) + &
-                 (temporary_spectra(4,1:number_groups)/blackbody_spectra(3,1:number_groups) + &
-                 temporary_spectra(6,1:number_groups)/blackbody_spectra(3,1:number_groups))/2.0d0
-         end if
-         emissivities(3,1:number_groups) = emissivities(3,1:number_groups) + &
-              temporary_spectra(3,1:number_groups) + temporary_spectra(5,1:number_groups)
-         emissivities(4,1:number_groups) = emissivities(4,1:number_groups) + &
-              temporary_spectra(4,1:number_groups) + temporary_spectra(6,1:number_groups)
-
-      !no averaging at all, what six different species
-      else if (number_local_species.eq.6) then
-         if (apply_kirchoff_to_pair_creation) then
-            absorption_opacity(3,1:number_groups) = absorption_opacity(3,1:number_groups) + &
-                 temporary_spectra(3,1:number_groups)/blackbody_spectra(3,1:number_groups)
-            absorption_opacity(4,1:number_groups) = absorption_opacity(4,1:number_groups) + &
-                 temporary_spectra(4,1:number_groups)/blackbody_spectra(3,1:number_groups)
-            absorption_opacity(5,1:number_groups) = absorption_opacity(5,1:number_groups) + &
-                 temporary_spectra(5,1:number_groups)/blackbody_spectra(3,1:number_groups)
-            absorption_opacity(6,1:number_groups) = absorption_opacity(6,1:number_groups) + &
-                 temporary_spectra(6,1:number_groups)/blackbody_spectra(3,1:number_groups)
-         end if
-         emissivities(3,1:number_groups) = emissivities(3,1:number_groups) + &
-              temporary_spectra(3,1:number_groups)
-         emissivities(4,1:number_groups) = emissivities(4,1:number_groups) + &
-              temporary_spectra(4,1:number_groups)
-         emissivities(5,1:number_groups) = emissivities(5,1:number_groups) + &
-              temporary_spectra(5,1:number_groups)
-         emissivities(6,1:number_groups) = emissivities(6,1:number_groups) + &
-              temporary_spectra(6,1:number_groups)
-
-      endif
-      
-      emissivities(:,:) = max(1.0d-300,emissivities(:,:)) !ergs/cm^3/s/MeV/srad
-      absorption_opacity(:,:) = max(1.0d-300,absorption_opacity(:,:)) !cm^-1
-
-	  table_mod_pp(:,:) = absorption_opacity
-	
-
-    end subroutine single_point_return_pp
-    
-    
-    
-    
-    
-    
-    
-    
-    
+        
     !calcualates the expansion of the scattering kernal, This is
     !\Phi_{out}_{0/1}, it does not contain the
     !exp(-\beta(\omega-\omega^\prime)), see make_table_example for symmetries
@@ -950,32 +853,32 @@ module nulib
          !electron neutrinos
          if (add_nue_Iscattering_electrons) then
             Phi0s(1,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                 eta,temperature,1)
+                 eta,temperature,1,1)
             Phi1s(1,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                 eta,temperature,1)
+                 eta,temperature,1,1)
          endif
 
          !electron antineutrinos
          if (add_anue_Iscattering_electrons) then
             Phi0s(2,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                 eta,temperature,2)
+                 eta,temperature,2,1)
             Phi1s(2,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                 eta,temperature,2)
+                 eta,temperature,2,1)
          endif
 
          if (number_local_species.eq.3) then
             !already ensure that all 4 are the all included or not
             if (add_numu_Iscattering_electrons) then
                Phi0s(3,ng) = (NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,3) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,4) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,5) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,6))/4.0d0
+                    eta,temperature,3,1) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,4,1) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,1) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,1))/4.0d0
                Phi1s(3,ng) = (NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,3) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,4) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,5) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,6))/4.0d0
+                    eta,temperature,3,1) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,4,1) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,1) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,1))/4.0d0
             endif
 
          else if (number_local_species.eq.4) then
@@ -983,43 +886,43 @@ module nulib
             !already ensure that mu and tau the same
             if (add_numu_Iscattering_electrons) then
                Phi0s(3,ng) = (NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,3) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,5))/2.0d0
+                    eta,temperature,3,1) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,1))/2.0d0
                Phi1s(3,ng) = (NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,3) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,5))/2.0d0
+                    eta,temperature,3,1) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,1))/2.0d0
             endif
 
             !already ensure that amu and atau the same
             if (add_anumu_Iscattering_electrons) then
                Phi0s(4,ng) = (NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,4) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,6))/2.0d0
+                    eta,temperature,4,1) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,1))/2.0d0
                Phi1s(4,ng) = (NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,4) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
-                    eta,temperature,6))/2.0d0
+                    eta,temperature,4,1) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,1))/2.0d0
             endif
 
          else if (number_local_species.eq.6) then
 
             if (add_numu_Iscattering_electrons) then
-               Phi0s(3,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,3)
-               Phi1s(3,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,3)
+               Phi0s(3,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,3,1)
+               Phi1s(3,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,3,1)
             endif
 
             if (add_anumu_Iscattering_electrons) then
-               Phi0s(4,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,4)
-               Phi1s(4,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,4)
+               Phi0s(4,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,4,1)
+               Phi1s(4,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,4,1)
          endif
 
             if (add_nutau_Iscattering_electrons) then
-               Phi0s(5,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,5)
-               Phi1s(5,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,5)
+               Phi0s(5,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,5,1)
+               Phi1s(5,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,5,1)
             endif
 
             if (add_anutau_Iscattering_electrons) then
-               Phi0s(6,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,6)
-               Phi1s(6,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,6)
+               Phi0s(6,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,6,1)
+               Phi1s(6,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,6,1)
             endif
 
          else
@@ -1040,6 +943,179 @@ module nulib
       endif
 
     end subroutine single_Ipoint_return_all
+    
+    
+    !calcualates the expansion of the scattering kernal, This is
+    !\Phi_{out}_{0/1}, it does not contain the
+    !exp(-\beta(\omega-\omega^\prime)), see make_table_example for symmetries
+    subroutine single_muonscat_point_return_all(iin,eta,temperature, &
+         Phi0s,Phi1s,neutrino_local_scheme)
+
+      implicit none
+
+      !input
+      real*8, dimension(:,:), intent(out) :: Phi0s
+      real*8, dimension(:,:), intent(out) :: Phi1s
+      integer, intent(in) :: iin
+      real*8, intent(in) :: eta,temperature
+      integer, intent(in) :: neutrino_local_scheme
+           
+      !neutrino species
+      !1 = electron neutrino !local scheme 1,2,3
+      !2 = electron anti-neutrino !scheme 1,2,3
+      !3 = muon neutrino !scheme 1,2,3
+      !4 = muon anti-neutrino !scheme 2,3
+      !5 = tau neutrino !scheme 3
+      !6 = tau anti-neutrino !scheme 3
+
+      !x neutrino = (3+4+5+6) !scheme 1
+      !y neutrino = (3+5) !scheme 2
+      !z anti-neutrino = (4+6) !scheme 2
+
+      !local
+      integer :: ns,ng
+      integer :: number_local_species
+      real*8  :: nuenergyin 
+
+      !functions
+      real*8 :: NES_Phi0_ThompsonBruenn
+      real*8 :: NES_Phi1_ThompsonBruenn
+
+      if (neutrino_local_scheme.ne.neutrino_scheme) then
+         write(*,*) neutrino_local_scheme, neutrino_scheme
+         stop "you are requesting different schemes"
+      endif
+
+      if (neutrino_scheme.eq.1) then
+         number_local_species = 3
+      else if (neutrino_scheme.eq.2) then
+         number_local_species = 4
+      else if (neutrino_scheme.eq.3) then
+         number_local_species = 6
+      else
+         stop "single_Ipoint_return_all:incorrect neutrino scheme"
+      endif
+
+      if (size(Phi0s,1).ne.number_local_species) then
+         stop "single_Ipoint_return_all:provided array has wrong number of species"
+      endif
+      if (size(Phi0s,2).ne.number_groups) then
+         stop "single_Ipoint_return_all:provided array has wrong number of groups"
+      endif
+
+      if (size(Phi1s,1).ne.number_local_species) then
+         stop "single_Ipoint_return_all:provided array has wrong number of species"
+      endif
+      if (size(Phi1s,2).ne.number_groups) then
+         stop "single_Ipoint_return_all:provided array has wrong number of groups"
+      endif
+      
+      nuenergyin = energies(iin)
+
+      Phi0s = 0.0d0
+      Phi1s = 0.0d0
+
+      !best way to calculate a kernel with E_iout > E_in is to
+      !calculate it with E_in^\prime = E_out and E_out^\prime = E_in,
+      !and use that fact that Rout(e2,e1) = Rin(e1,e2) =
+      !exp(-(e2-e1)/T * Rout(e1,e2). Numerically this is desired
+      !because E_out > E_in doesn't work so well in these routines (in
+      !fact it may be assumed in their derivation that Ein>=Eout [or
+      !at least Ein >= Eout-Ee] although I cannot find the place)
+      do ng=1,iin
+         !electron neutrinos
+         if (add_nue_Iscattering_muons) then
+            Phi0s(1,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                 eta,temperature,1,2)
+            Phi1s(1,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                 eta,temperature,1,2)
+         endif
+
+         !electron antineutrinos
+         if (add_anue_Iscattering_muons) then
+            Phi0s(2,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                 eta,temperature,2,2)
+            Phi1s(2,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                 eta,temperature,2,2)
+         endif
+
+         if (number_local_species.eq.3) then
+            !already ensure that all 4 are the all included or not
+            if (add_numu_Iscattering_muons) then
+               Phi0s(3,ng) = (NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,3,2) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,4,2) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,2) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,2))/4.0d0
+               Phi1s(3,ng) = (NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,3,2) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,4,2) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,2) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,2))/4.0d0
+            endif
+
+         else if (number_local_species.eq.4) then
+
+            !already ensure that mu and tau the same
+            if (add_numu_Iscattering_muons) then
+               Phi0s(3,ng) = (NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,3,2) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,2))/2.0d0
+               Phi1s(3,ng) = (NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,3,2) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,5,2))/2.0d0
+            endif
+
+            !already ensure that amu and atau the same
+            if (add_anumu_Iscattering_muons) then
+               Phi0s(4,ng) = (NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,4,2) + NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,2))/2.0d0
+               Phi1s(4,ng) = (NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,4,2) + NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng), &
+                    eta,temperature,6,2))/2.0d0
+            endif
+
+         else if (number_local_species.eq.6) then
+
+            if (add_numu_Iscattering_muons) then
+               Phi0s(3,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,3,2)
+               Phi1s(3,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,3,2)
+            endif
+
+            if (add_anumu_Iscattering_muons) then
+               Phi0s(4,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,4,2)
+               Phi1s(4,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,4,2)
+         endif
+
+            if (add_nutau_Iscattering_muons) then
+               Phi0s(5,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,5,2)
+               Phi1s(5,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,5,2)
+            endif
+
+            if (add_anutau_Iscattering_muons) then
+               Phi0s(6,ng) = NES_Phi0_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,6,2)
+               Phi1s(6,ng) = NES_Phi1_ThompsonBruenn(nuenergyin,energies(ng),eta,temperature,6,2)
+            endif
+
+         else
+            stop "shouldn't be here"
+         endif
+
+      enddo
+
+	  if(debug) then
+         ! check that phis are consistent
+         do ns=1,number_local_species
+            do ng=1,iin
+               if(abs(Phi1s(ns,ng)/Phi0s(ns,ng)) > 1.0d0) then
+                  write(*,*) ns, ng, Phi1s(ns,ng), Phi0s(ns,ng), Phi1s(ns,ng)/Phi0s(ns,ng)
+               end if
+            enddo
+         enddo
+      endif
+
+    end subroutine single_muonscat_point_return_all
 
     !calcualates the expansion of the epannihilation kernal, These are
     !|phi^{prod/annihl}_{0/1}
